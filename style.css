@@ -1,141 +1,138 @@
 /* ===== RESET ===== */
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 html, body {
-  height: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #fafafa;
-  color: #111;
+    height: 100%;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #111;
+    background: #fafafa;
 }
 
 /* ===== LAYOUT ===== */
-body {
-  display: flex;
-  flex-direction: column;
+.page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 main {
-  flex: 1;
+    flex: 1;
 }
 
 /* ===== HEADER ===== */
 header {
-  background: #fff;
-  border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fff;
 }
 
 .header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .logo {
-  font-size: 22px;
-  font-weight: 600;
+    font-size: 28px;          /* ← ЯВНО больше hero */
+    font-weight: 700;
 }
 
 nav a {
-  margin-left: 24px;
-  text-decoration: none;
-  color: #111;
-  font-size: 14px;
+    margin-left: 24px;
+    text-decoration: none;
+    color: #111;
+    font-weight: 500;
 }
 
 /* ===== HERO ===== */
 .hero {
-  max-width: 1200px;
-  margin: 48px auto 32px;
-  padding: 0 24px;
+    max-width: 1200px;
+    margin: 48px auto 32px;
+    padding: 0 24px;
 }
 
 .hero h1 {
-  font-size: 36px;
-  margin-bottom: 8px;
+    font-size: 40px;          /* ← МЕНЬШЕ логотипа */
+    font-weight: 700;
+    margin-bottom: 8px;
 }
 
 .hero p {
-  font-size: 18px;
-  color: #555;
+    font-size: 18px;
+    color: #555;
 }
 
-/* ===== CARDS ===== */
-.cards {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px 64px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
+/* ===== MODULE GRID ===== */
+.modules {
+    max-width: 1200px;
+    margin: 32px auto 64px;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
 }
 
+/* ===== CARD ===== */
 .card {
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 24px;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    background: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
 }
 
-/* === ICONS (ВОТ ТУТ ВСЁ ЧИНИТСЯ) === */
-.card > div:first-child {
-  font-size: 40px;     /* размер иконки */
-  line-height: 1;
+.card img {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
 }
 
-/* ===== CARD TEXT ===== */
 .card h3 {
-  font-size: 18px;
+    font-size: 18px;
+    margin-bottom: 6px;
 }
 
 .card p {
-  font-size: 14px;
-  color: #555;
-  flex-grow: 1;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: auto;
 }
 
-.card button {
-  align-self: flex-start;
-  padding: 8px 14px;
-  background: #000;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.soon {
-  font-size: 13px;
-  color: #888;
+.card .open-btn {
+    margin-top: 16px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
 }
 
 /* ===== FOOTER ===== */
 footer {
-  background: #fff;
-  border-top: 1px solid #e5e5e5;
+    border-top: 1px solid #e5e5e5;
+    background: #fff;
 }
 
 .footer-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
 }
 
-footer a {
-  margin-right: 16px;
-  text-decoration: none;
-  color: #555;
+.footer-inner a {
+    margin-right: 16px;
+    color: #555;
+    text-decoration: none;
 }
