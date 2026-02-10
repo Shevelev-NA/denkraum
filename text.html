@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -32,7 +32,7 @@
   <div class="controls">
     <button class="btn" id="btn-parallel">DE + RU</button>
     <button class="btn btn-ghost" id="btn-toggle">Toggle</button>
-    <button class="btn btn-ghost" id="btn-copy">Copy all</button>
+    <button class="btn btn-ghost" id="btn-copy-all">Copy all</button>
     <button class="btn btn-danger" id="btn-clear">Clear</button>
   </div>
 
@@ -48,10 +48,5 @@
 </div>
 
 <script src="./text.js"></script>
-<script>
-document.getElementById("btn-copy").onclick = () => {
-  navigator.clipboard.writeText(output.innerText);
-};
-</script>
 </body>
 </html>
