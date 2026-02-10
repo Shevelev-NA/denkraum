@@ -2,86 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Denkraum — Understand language through text and media</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Denkraum helps you understand language through text translation, audio transcription, real speech examples, and image description." />
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Denkraum — tools for text, speech and media</title>
+  <meta name="description" content="Denkraum: simple tools for understanding text, speech and media. Start with post-line translation, and add more modules over time." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://denkraum.pages.dev/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Denkraum" />
+  <meta property="og:description" content="Tools for understanding text, speech and media." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://denkraum.pages.dev/" />
+
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <div class="page">
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./index.html" aria-label="Denkraum home">Denkraum</a>
 
-<div class="page">
-
-  <!-- HEADER -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">Denkraum</div>
-      <nav class="nav">
-        <a href="#">Tools</a>
-        <a href="#">About</a>
-        <a href="#">Profile</a>
-      </nav>
-    </div>
-  </header>
-
-  <!-- MAIN -->
-  <main class="main">
-
-    <section class="hero">
-      <h1>Understand language</h1>
-      <p>through text, speech and media.</p>
-    </section>
-
-    <section class="modules">
-      <div class="card">
-        <div class="icon">📝</div>
-        <h3>Text</h3>
-        <p>Post-line translation and language understanding.</p>
-        <button>Open</button>
+        <nav class="nav" aria-label="Primary navigation">
+          <a href="#tools">Tools</a>
+          <a href="#about">About</a>
+          <a href="#profile" class="muted-link">Profile</a>
+        </nav>
       </div>
+    </header>
 
-      <div class="card">
-        <div class="icon">🎧</div>
-        <h3>Transcription</h3>
-        <p>Audio to text with timestamps.</p>
-        <span class="soon">Coming soon</span>
+    <main class="main">
+      <section class="hero" id="tools">
+        <h1>Understand language</h1>
+        <p>Through text, speech and media.</p>
+      </section>
+
+      <section class="modules" aria-label="Tools">
+        <article class="card">
+          <div class="icon" aria-hidden="true">📝</div>
+          <h3>Text</h3>
+          <p>Post-line translation and language understanding.</p>
+          <a class="btn" href="./text.html" aria-label="Open Text module">Open</a>
+        </article>
+
+        <article class="card is-soon">
+          <div class="icon" aria-hidden="true">🎧</div>
+          <h3>Transcription</h3>
+          <p>Audio to text with timestamps.</p>
+          <div class="soon">Coming soon</div>
+        </article>
+
+        <article class="card is-soon">
+          <div class="icon" aria-hidden="true">▶️</div>
+          <h3>Real Speech</h3>
+          <p>Hear words in real video context.</p>
+          <div class="soon">Coming soon</div>
+        </article>
+
+        <article class="card is-soon">
+          <div class="icon" aria-hidden="true">🖼️</div>
+          <h3>Image</h3>
+          <p>Describe images and situations.</p>
+          <div class="soon">Coming soon</div>
+        </article>
+
+        <article class="card is-soon">
+          <div class="icon" aria-hidden="true">💡</div>
+          <h3>Insight</h3>
+          <p>Get a concise overview of the content.</p>
+          <div class="soon">Coming soon</div>
+        </article>
+      </section>
+
+      <section class="about" id="about" aria-label="About Denkraum">
+        <div class="about-box">
+          <h2>About</h2>
+          <p>
+            Denkraum is a personal project. Today it is free to use.
+            Later, optional paid features may be added (the core will stay usable).
+          </p>
+        </div>
+      </section>
+
+      <section class="profile" id="profile" aria-label="Profile">
+        <div class="about-box">
+          <h2>Profile</h2>
+          <p>Registration is not available yet.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-links">
+          <a href="./impressum.html">Impressum</a>
+          <a href="./privacy.html">Datenschutzerklärung</a>
+        </div>
+        <div class="footer-copy">© 2026 Denkraum</div>
       </div>
-
-      <div class="card">
-        <div class="icon">▶️</div>
-        <h3>Real Speech</h3>
-        <p>Hear words in real video context.</p>
-        <span class="soon">Coming soon</span>
-      </div>
-
-      <div class="card">
-        <div class="icon">🖼️</div>
-        <h3>Image</h3>
-        <p>Describe images and situations.</p>
-        <span class="soon">Coming soon</span>
-      </div>
-
-      <div class="card">
-        <div class="icon">💡</div>
-        <h3>Insight</h3>
-        <p>Get a concise overview of the content.</p>
-        <span class="soon">Coming soon</span>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-links">
-        <a href="impressum.html">Impressum</a>
-        <a href="privacy.html">Datenschutzerklärung</a>
-      </div>
-      <div class="footer-copy">© 2026 Denkraum</div>
-    </div>
-  </footer>
-
-</div>
-
+    </footer>
+  </div>
 </body>
 </html>
