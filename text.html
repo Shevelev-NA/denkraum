@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Denkraum · Text</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">Denkraum</a>
+  <nav class="nav">
+    <a href="index.html" class="nav-link">Tools</a>
+    <a href="#" class="nav-link">About</a>
+    <a href="#" class="nav-link">Profile</a>
+  </nav>
+</header>
+
+<main class="container">
+
+  <section class="tool">
+    <div class="tool-header">
+      <h1 class="tool-title">Text · Line by line</h1>
+      <a class="tool-back" href="index.html">← Back to Tools</a>
+    </div>
+
+    <textarea id="input" class="tool-input" placeholder="Paste German text here…"></textarea>
+
+    <div class="tool-controls">
+      <button class="tool-btn" id="btn-parallel">DE + RU</button>
+      <button class="tool-btn" id="btn-toggle">Toggle</button>
+      <button class="tool-btn tool-btn-ghost" id="btn-clear">Clear</button>
+    </div>
+
+    <div id="output" class="tool-output"></div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner container">
+    <div class="footer-links">
+      <a class="footer-link" href="impressum.html">Impressum</a>
+      <a class="footer-link" href="privacy.html">Datenschutzerklärung</a>
+    </div>
+    <div class="footer-note">
+      © <span id="year"></span> Denkraum
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+<script src="text.js"></script>
+</body>
+</html>
