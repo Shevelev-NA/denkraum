@@ -2,105 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Denkraum</title>
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
-    rel="stylesheet"
-  >
-
+  <title>Denkraum · Text</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<header class="topbar">
-  <a class="brand" href="index.html">Denkraum</a>
-  <nav class="nav">
-    <a href="index.html" class="nav-link is-active">Tools</a>
-    <a href="#" class="nav-link">About</a>
-    <a href="#" class="nav-link">Profile</a>
-  </nav>
+<header class="header">
+  <div class="brand">Denkraum</div>
 </header>
 
 <main class="container">
+  <section class="tool">
+    <h1>Text · Line by line</h1>
 
-  <!-- HERO -->
-  <section class="hero">
-    <p class="hero-title">Understand language</p>
-    <p class="hero-subtitle">through text, speech and media.</p>
+    <textarea id="input" placeholder="Paste German text here…"></textarea>
+
+    <div class="controls">
+      <button id="btn-parallel">DE + RU</button>
+      <button id="btn-toggle">Toggle</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+
+    <div id="output"></div>
   </section>
-
-  <!-- MODULES -->
-  <section class="modules">
-
-    <article class="module-card">
-      <div class="module-icon">📝</div>
-      <h2 class="module-title">Text</h2>
-      <p class="module-desc">
-        Translate text, explain grammar and understand meaning.
-      </p>
-      <a class="btn" href="#">Open</a>
-    </article>
-
-    <article class="module-card">
-      <div class="module-icon">🎧</div>
-      <h2 class="module-title">Transcription</h2>
-      <p class="module-desc">
-        Convert audio to text with timestamps and translation.
-      </p>
-      <a class="btn" href="#">Open</a>
-    </article>
-
-    <article class="module-card">
-      <div class="module-icon">▶️</div>
-      <h2 class="module-title">Real Speech</h2>
-      <p class="module-desc">
-        Hear how words and phrases sound in real videos.
-      </p>
-      <a class="btn" href="#">Open</a>
-    </article>
-
-    <article class="module-card">
-      <div class="module-icon">🖼️</div>
-      <h2 class="module-title">Image</h2>
-      <p class="module-desc">
-        Describe images and situations in natural language.
-      </p>
-      <a class="btn" href="#">Open</a>
-    </article>
-
-    <article class="module-card">
-      <div class="module-icon">💡</div>
-      <h2 class="module-title">Insight</h2>
-      <p class="module-desc">
-        Get concise summaries and key points from content.
-      </p>
-      <a class="btn" href="#">Open</a>
-    </article>
-
-  </section>
-
 </main>
 
 <footer class="footer">
-  <div class="footer-inner container">
-    <div class="footer-links">
-      <a class="footer-link" href="impressum.html">Impressum</a>
-      <a class="footer-link" href="privacy.html">Datenschutzerklärung</a>
-    </div>
-    <div class="footer-note">
-      © <span id="year"></span> Denkraum
-    </div>
-  </div>
+  <a href="impressum.html">Impressum</a>
+  <a href="privacy.html">Datenschutzerklärung</a>
 </footer>
 
-<script>
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
