@@ -109,3 +109,115 @@
     grid-template-columns:1fr;
   }
 }
+/* ===== Text tool page ===== */
+.tool{
+  max-width: 980px;
+  margin: 28px auto 64px;
+}
+
+.tool-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:16px;
+  margin-bottom:14px;
+}
+
+.tool-title{
+  margin:0;
+  font-size:22px;
+  font-weight:700;
+}
+
+.tool-back{
+  text-decoration:none;
+  font-weight:600;
+  color:#374151;
+}
+
+.tool-input{
+  width:100%;
+  min-height:180px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  font-size:15px;
+  font-weight:500;
+  background:#fff;
+  resize:vertical;
+}
+
+.tool-controls{
+  margin:14px 0 18px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.tool-btn{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.tool-btn:hover{
+  background:var(--accentHover);
+}
+
+.tool-btn-ghost{
+  background:#eef2ff;
+  color:#1d4ed8;
+}
+
+.tool-btn-ghost:hover{
+  background:#e0e7ff;
+}
+
+.tool-output{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:10px 18px;
+  box-shadow:var(--shadow);
+}
+
+.tool-line{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  padding:12px 0;
+  border-bottom:1px solid var(--line);
+}
+
+.tool-line:last-child{
+  border-bottom:none;
+}
+
+.tool-de{
+  font-weight:600;
+}
+
+.tool-ru{
+  font-weight:600;
+  color:#374151;
+}
+
+.tool-hidden{
+  display:none;
+}
+
+.tool-line-toggle{
+  cursor:pointer;
+}
+
+@media (max-width:768px){
+  .tool-line{
+    grid-template-columns:1fr;
+  }
+}
+
