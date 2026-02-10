@@ -19,11 +19,31 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .logo {
   font-size: 26px;
   font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-link {
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.nav-link.active {
+  color: #111;
+  font-weight: 600;
 }
 
 /* MAIN */
@@ -50,7 +70,7 @@ body {
   color: #555;
 }
 
-/* MODULE GRID — ВАЖНО */
+/* MODULE GRID */
 .modules {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -99,10 +119,6 @@ body {
   width: fit-content;
 }
 
-.btn:hover {
-  opacity: 0.9;
-}
-
 /* COMING SOON */
 .coming {
   margin-top: auto;
@@ -114,17 +130,39 @@ body {
 .footer {
   background: #fff;
   border-top: 1px solid #e5e7eb;
-  text-align: center;
-  padding: 20px;
 }
 
-.footer a {
-  margin: 0 12px;
-  color: #555;
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links a {
+  margin-right: 16px;
   text-decoration: none;
+  color: #555;
   font-size: 14px;
 }
 
-.footer a:hover {
-  text-decoration: underline;
+.footer-copy {
+  font-size: 14px;
+  color: #555;
+}
+
+/* MOBILE */
+@media (max-width: 640px) {
+  .header-inner,
+  .footer-inner {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .nav {
+    gap: 14px;
+  }
 }
