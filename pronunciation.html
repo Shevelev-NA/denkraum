@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Denkraum — Pronunciation</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<div class="page">
+
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="./index.html">Denkraum</a>
+    <nav class="nav">
+      <a href="./index.html">Tools</a>
+      <a href="./about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main tool">
+  <h1 class="tool-title">Pronunciation · Real speech</h1>
+
+  <!-- SEARCH -->
+  <div class="controls">
+    <input id="query" class="textarea" placeholder="Enter word or phrase…" />
+    <button class="btn" id="btn-search">Search</button>
+  </div>
+
+  <!-- PLAYER -->
+  <div id="player-wrapper" style="margin:16px 0; display:none;">
+    <iframe
+      id="player"
+      width="100%"
+      height="220"
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="output"></div>
+
+  <div style="margin-top:16px;">
+    <button class="btn btn-ghost" id="btn-more" style="display:none;">
+      Show 20 more
+    </button>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <a href="./index.html">← Back</a>
+  </div>
+</footer>
+
+</div>
+
+<script src="./pronunciation.js"></script>
+</body>
+</html>
