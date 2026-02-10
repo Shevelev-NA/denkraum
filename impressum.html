@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Denkraum — Impressum</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">Denkraum</a>
+  <nav class="nav">
+    <a href="index.html" class="nav-link">Tools</a>
+    <a href="#" class="nav-link">About</a>
+    <a href="#" class="nav-link">Profile</a>
+  </nav>
+</header>
+
+<main class="container page">
+  <header class="page-header">
+    <h1 class="page-title">Impressum</h1>
+    <p class="page-subtitle">Angaben gemäß § 5 DDG</p>
+  </header>
+
+  <section class="content">
+    <h2>Dienstanbieter</h2>
+    <p>
+      Denkraum<br />
+      [Vorname Nachname]<br />
+      [Straße Hausnummer]<br />
+      [PLZ Ort]<br />
+      Deutschland
+    </p>
+
+    <h2>Kontakt</h2>
+    <p>
+      E-Mail: <a href="mailto:[deine@email.de]">[deine@email.de]</a>
+    </p>
+
+    <h2>Verantwortlich für den Inhalt</h2>
+    <p>
+      Verantwortlich i.S.d. § 18 Abs. 2 MStV:<br />
+      [Vorname Nachname]<br />
+      [Straße Hausnummer]<br />
+      [PLZ Ort]<br />
+      Deutschland
+    </p>
+
+    <h2>Haftung für Inhalte</h2>
+    <p>
+      Als Diensteanbieter sind wir gemäß den allgemeinen Gesetzen für eigene Inhalte auf diesen Seiten verantwortlich.
+      Wir übernehmen jedoch keine Gewähr für die Aktualität, Vollständigkeit und Richtigkeit der bereitgestellten Inhalte.
+    </p>
+
+    <h2>Haftung für Links</h2>
+    <p>
+      Unser Angebot enthält ggf. Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben.
+      Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen.
+    </p>
+
+    <h2>Urheberrecht</h2>
+    <p>
+      Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht.
+      Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts
+      bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.
+    </p>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner container">
+    <div class="footer-links">
+      <a class="footer-link" href="impressum.html" aria-current="page">Impressum</a>
+      <a class="footer-link" href="privacy.html">Datenschutzerklärung</a>
+    </div>
+    <div class="footer-note">© <span id="year"></span> Denkraum</div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
