@@ -3,13 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <title>Denkraum — tools for text, speech and media</title>
-  <meta name="description" content="Denkraum: simple tools for understanding text, speech and media." />
-  <meta name="robots" content="index,follow" />
-  <link rel="canonical" href="https://denkraum.pages.dev/" />
 
-  <!-- Inter font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,111 +12,72 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="page">
-    <header class="header">
-      <div class="header-inner">
-        <a class="logo" href="./index.html" aria-label="Denkraum home">Denkraum</a>
+<div class="page">
 
-        <nav class="nav" aria-label="Primary navigation">
-          <a href="./index.html" aria-current="page">Tools</a>
-          <a href="./about.html">About</a>
-        </nav>
-      </div>
-    </header>
-
-    <main class="main">
-      <section class="hero" id="tools" aria-label="Denkraum tools">
-        <div class="hero-inner">
-          <div>
-            <h1>Understand language</h1>
-            <p>Through text, speech and media.</p>
-          </div>
-
-          <div class="hero-badges" aria-label="Highlights">
-            <span class="badge">Fast</span>
-            <span class="badge">Minimal UI</span>
-            <span class="badge">Practical</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="modules" aria-label="Tools grid">
-        <article class="card">
-          <div class="card-top">
-            <div class="icon" aria-hidden="true">📝</div>
-            <div class="card-meta">
-              <h3>Text</h3>
-              <p>Post-line translation and language understanding.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <a class="btn" href="./text.html" aria-label="Open Text tool">Open</a>
-          </div>
-        </article>
-
-        <article class="card is-soon" aria-disabled="true">
-          <div class="card-top">
-            <div class="icon" aria-hidden="true">🎧</div>
-            <div class="card-meta">
-              <h3>Transcription</h3>
-              <p>Audio to text with timestamps.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <span class="tag">Coming soon</span>
-          </div>
-        </article>
-
-        <article class="card is-soon" aria-disabled="true">
-          <div class="card-top">
-            <div class="icon" aria-hidden="true">▶️</div>
-            <div class="card-meta">
-              <h3>Real Speech</h3>
-              <p>Hear words in real video context.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <span class="tag">Coming soon</span>
-          </div>
-        </article>
-
-        <article class="card is-soon" aria-disabled="true">
-          <div class="card-top">
-            <div class="icon" aria-hidden="true">🖼️</div>
-            <div class="card-meta">
-              <h3>Image</h3>
-              <p>Describe images and situations.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <span class="tag">Coming soon</span>
-          </div>
-        </article>
-
-        <article class="card is-soon" aria-disabled="true">
-          <div class="card-top">
-            <div class="icon" aria-hidden="true">💡</div>
-            <div class="card-meta">
-              <h3>Insight</h3>
-              <p>Get a concise overview of the content.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <span class="tag">Coming soon</span>
-          </div>
-        </article>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        <div class="footer-links">
-          <a href="./impressum.html">Impressum</a>
-          <a href="./privacy.html">Datenschutzerklärung</a>
-        </div>
-        <div class="footer-copy">© 2026 Denkraum</div>
-      </div>
-    </footer>
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="./index.html">Denkraum</a>
+    <nav class="nav">
+      <a href="./index.html" aria-current="page">Tools</a>
+      <a href="./about.html">About</a>
+    </nav>
   </div>
+</header>
+
+<main class="main">
+  <section class="hero">
+    <h1>Understand language</h1>
+    <p>Through text, speech and media.</p>
+  </section>
+
+  <section class="modules">
+    <article class="card">
+      <div class="icon">📝</div>
+      <h3>Text</h3>
+      <p>Post-line translation and language understanding.</p>
+      <a class="btn" href="./text.html">Open</a>
+    </article>
+
+    <article class="card is-soon">
+      <div class="icon">🎧</div>
+      <h3>Transcription</h3>
+      <p>Audio to text with timestamps.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+
+    <article class="card is-soon">
+      <div class="icon">▶️</div>
+      <h3>Real Speech</h3>
+      <p>Hear words in real video context.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+
+    <article class="card is-soon">
+      <div class="icon">🖼️</div>
+      <h3>Image</h3>
+      <p>Describe images and situations.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+
+    <article class="card is-soon">
+      <div class="icon">💡</div>
+      <h3>Insight</h3>
+      <p>Get a concise overview of the content.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="./impressum.html">Impressum</a>
+      <a href="./privacy.html">Datenschutzerklärung</a>
+    </div>
+    <div>© 2026 Denkraum</div>
+  </div>
+</footer>
+
+</div>
 </body>
 </html>
