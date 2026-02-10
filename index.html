@@ -16,6 +16,12 @@
 <header class="header">
   <div class="header-inner">
     <div class="logo">Denkraum</div>
+
+    <nav class="nav">
+      <a href="#" class="nav-link active">Tools</a>
+      <a href="#" class="nav-link">About</a>
+      <a href="#" class="nav-link">Profile</a>
+    </nav>
   </div>
 </header>
 
@@ -68,9 +74,20 @@
 </main>
 
 <footer class="footer">
-  <a href="impressum.html">Impressum</a>
-  <a href="privacy.html">Datenschutzerklärung</a>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="impressum.html">Impressum</a>
+      <a href="privacy.html">Datenschutzerklärung</a>
+    </div>
+    <div class="footer-copy">
+      © <span id="year"></span> Denkraum
+    </div>
+  </div>
 </footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
 
 </body>
 </html>
