@@ -37,7 +37,7 @@
     <button class="btn" id="btn-search">Search</button>
   </div>
 
-  <!-- PLAYER (ONE GLOBAL PLAYER) -->
+  <!-- PLAYER -->
   <div id="player-wrapper" style="margin:16px 0; display:none;">
     <iframe
       id="player"
@@ -68,7 +68,9 @@
 </div>
 
 <script>
-/* ===== MINIMAL WORKING LOGIC (NO BACKEND) ===== */
+/* ===== FRONTEND → BACKEND CONNECTION ===== */
+
+const API_URL = "http://localhost:3001/search";
 
 const resultsEl = document.getElementById("results");
 const player = document.getElementById("player");
@@ -92,10 +94,12 @@ btnMore.onclick = () => {
   loadResults();
 };
 
-function loadResults() {
-  const data = mockSearch(currentQuery, page);
+async function loadResults() {
+  const url = `${API_URL}?q=${encodeURIComponent(currentQuery)}&page=${page}`;
+  const res = await fetch(url);
+  const data = await res.json();
 
-  data.forEach(item => {
+  data.results.forEach(item => {
     const row = document.createElement("div");
     row.className = "line";
 
@@ -118,25 +122,14 @@ function loadResults() {
 }
 
 function play(videoId, start) {
-  player.src = \`https://www.youtube.com/embed/\${videoId}?start=\${start}&autoplay=1\`;
+  player.src = `https://www.youtube.com/embed/${videoId}?start=${start}&autoplay=1`;
   playerWrapper.style.display = "block";
   playerWrapper.scrollIntoView({ behavior: "smooth" });
 }
 
 function highlight(text, query) {
-  const re = new RegExp(\`(\${query})\`, "ig");
+  const re = new RegExp(`(${query})`, "ig");
   return text.replace(re, "<mark>$1</mark>");
-}
-
-/* ===== MOCK DATA (UI ONLY) ===== */
-function mockSearch(q, page) {
-  const base = (page - 1) * 20;
-  return Array.from({ length: 20 }).map((_, i) => ({
-    videoId: "dQw4w9WgXcQ",
-    start: 30 + i * 3,
-    title: \`Example video \${base + i + 1}\`,
-    text: \`This is an example sentence where the word \${q} is spoken naturally.\`
-  }));
 }
 </script>
 
