@@ -1,71 +1,48 @@
 const input = document.getElementById("input");
 const output = document.getElementById("output");
 
-document.getElementById("btn-parallel").addEventListener("click", renderParallel);
-document.getElementById("btn-toggle").addEventListener("click", renderToggle);
-document.getElementById("btn-clear").addEventListener("click", () => {
+document.getElementById("btn-parallel").onclick = renderParallel;
+document.getElementById("btn-toggle").onclick = renderToggle;
+document.getElementById("btn-clear").onclick = () => {
   input.value = "";
   output.innerHTML = "";
-});
+};
 
-// Временная заглушка перевода (потом заменим на реальный источник)
-function mockTranslate(text) {
+function translateMock(text) {
   return "[RU] " + text;
 }
 
 function renderParallel() {
   output.innerHTML = "";
-  const lines = input.value.split("\n");
-
-  for (const line of lines) {
-    if (!line.trim()) continue;
-
-    const ru = mockTranslate(line);
-
-    const row = document.createElement("div");
-    row.className = "tool-line";
-
-    const de = document.createElement("div");
-    de.className = "tool-de";
-    de.textContent = line;
-
-    const ruDiv = document.createElement("div");
-    ruDiv.className = "tool-ru";
-    ruDiv.textContent = ru;
-
-    row.appendChild(de);
-    row.appendChild(ruDiv);
-    output.appendChild(row);
-  }
+  input.value.split("\n").forEach(line => {
+    if (!line.trim()) return;
+    output.innerHTML += `
+      <div class="line">
+        <div>${line}</div>
+        <div>${translateMock(line)}</div>
+      </div>
+    `;
+  });
 }
 
 function renderToggle() {
   output.innerHTML = "";
-  const lines = input.value.split("\n");
-
-  for (const line of lines) {
-    if (!line.trim()) continue;
-
-    const ru = mockTranslate(line);
+  input.value.split("\n").forEach(line => {
+    if (!line.trim()) return;
 
     const row = document.createElement("div");
-    row.className = "tool-line tool-line-toggle";
+    row.className = "line";
 
     const de = document.createElement("div");
-    de.className = "tool-de";
     de.textContent = line;
 
-    const ruDiv = document.createElement("div");
-    ruDiv.className = "tool-ru tool-hidden";
-    ruDiv.textContent = ru;
+    const ru = document.createElement("div");
+    ru.textContent = translateMock(line);
+    ru.classList.add("hidden");
 
-    row.appendChild(de);
-    row.appendChild(ruDiv);
-
-    row.addEventListener("click", () => {
-      ruDiv.classList.toggle("tool-hidden");
-    });
+    row.append(de, ru);
+    row.onclick = () => ru.classList.toggle("hidden");
 
     output.appendChild(row);
-  }
+  });
 }
