@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Denkraum — Text</title>
 
-  <!-- Inter font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,51 +12,46 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="page">
-    <header class="header">
-      <div class="header-inner">
-        <a class="logo" href="./index.html" aria-label="Denkraum home">Denkraum</a>
-        <nav class="nav" aria-label="Primary navigation">
-          <a href="./index.html">Tools</a>
-          <a href="./about.html">About</a>
-        </nav>
-      </div>
-    </header>
+<div class="page">
 
-    <main class="main tool">
-      <section class="tool-head">
-        <div>
-          <h1>Text</h1>
-          <p>Line-by-line: show translation next to each line or toggle on click.</p>
-        </div>
-        <a class="btn btn-ghost" href="./index.html" aria-label="Back to Tools">← Back</a>
-      </section>
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="./index.html">Denkraum</a>
+    <nav class="nav">
+      <a href="./index.html">Tools</a>
+      <a href="./about.html">About</a>
+    </nav>
+  </div>
+</header>
 
-      <section class="panel tool-panel" aria-label="Text tool">
-        <label class="label" for="input">Input</label>
-        <textarea id="input" class="textarea" placeholder="Paste text here…"></textarea>
+<main class="main tool">
+  <h1 class="tool-title">Text · Line by line</h1>
 
-        <div class="controls" aria-label="Actions">
-          <button class="btn" id="btn-parallel" type="button">DE + RU</button>
-          <button class="btn btn-ghost" id="btn-toggle" type="button">Toggle</button>
-          <button class="btn btn-danger" id="btn-clear" type="button">Clear</button>
-        </div>
+  <textarea id="input" class="textarea" placeholder="Paste text here…"></textarea>
 
-        <div id="output" class="output" aria-label="Result"></div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        <div class="footer-links">
-          <a href="./impressum.html">Impressum</a>
-          <a href="./privacy.html">Datenschutzerklärung</a>
-        </div>
-        <div class="footer-copy">© 2026 Denkraum</div>
-      </div>
-    </footer>
+  <div class="controls">
+    <button class="btn" id="btn-parallel">DE + RU</button>
+    <button class="btn btn-ghost" id="btn-toggle">Toggle</button>
+    <button class="btn btn-ghost" id="btn-copy">Copy all</button>
+    <button class="btn btn-danger" id="btn-clear">Clear</button>
   </div>
 
-  <script src="./text.js"></script>
+  <div id="output" class="output"></div>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <a href="./index.html">← Back</a>
+  </div>
+</footer>
+
+</div>
+
+<script src="./text.js"></script>
+<script>
+document.getElementById("btn-copy").onclick = () => {
+  navigator.clipboard.writeText(output.innerText);
+};
+</script>
 </body>
 </html>
