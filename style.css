@@ -1,138 +1,133 @@
-/* ===== RESET ===== */
+/* RESET */
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html, body {
-    height: 100%;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: #111;
-    background: #fafafa;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fb;
+  color: #111;
 }
 
-/* ===== LAYOUT ===== */
+/* PAGE LAYOUT */
 .page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-main {
-    flex: 1;
-}
-
-/* ===== HEADER ===== */
-header {
-    border-bottom: 1px solid #e5e5e5;
-    background: #fff;
+/* HEADER */
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .header-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .logo {
-    font-size: 28px;          /* ← ЯВНО больше hero */
-    font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
 }
 
-nav a {
-    margin-left: 24px;
-    text-decoration: none;
-    color: #111;
-    font-weight: 500;
+.nav a {
+  margin-left: 24px;
+  text-decoration: none;
+  color: #111;
+  font-size: 14px;
 }
 
-/* ===== HERO ===== */
-.hero {
-    max-width: 1200px;
-    margin: 48px auto 32px;
-    padding: 0 24px;
+/* MAIN */
+.main {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px;
 }
 
 .hero h1 {
-    font-size: 40px;          /* ← МЕНЬШЕ логотипа */
-    font-weight: 700;
-    margin-bottom: 8px;
+  font-size: 36px;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .hero p {
-    font-size: 18px;
-    color: #555;
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 40px;
 }
 
-/* ===== MODULE GRID ===== */
+/* MODULES */
 .modules {
-    max-width: 1200px;
-    margin: 32px auto 64px;
-    padding: 0 24px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
 }
 
-/* ===== CARD ===== */
 .card {
-    background: #fff;
-    border: 1px solid #e6e6e6;
-    border-radius: 12px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    min-height: 200px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
 }
 
-.card img {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 12px;
+.icon {
+  font-size: 28px;
+  margin-bottom: 12px;
 }
 
 .card h3 {
-    font-size: 18px;
-    margin-bottom: 6px;
+  font-size: 16px;
+  margin-bottom: 6px;
 }
 
 .card p {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: auto;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 12px;
 }
 
-.card .open-btn {
-    margin-top: 16px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: none;
-    background: #000;
-    color: #fff;
-    cursor: pointer;
+.card button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
 }
 
-/* ===== FOOTER ===== */
-footer {
-    border-top: 1px solid #e5e5e5;
-    background: #fff;
+.soon {
+  font-size: 13px;
+  color: #888;
+}
+
+/* FOOTER */
+.footer {
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
 }
 
 .footer-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px 24px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
 }
 
-.footer-inner a {
-    margin-right: 16px;
-    color: #555;
-    text-decoration: none;
+.footer a {
+  margin-right: 16px;
+  text-decoration: none;
+  color: #111;
 }
