@@ -1,86 +1,168 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Denkraum — Impressum</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+* {
+  box-sizing: border-box;
+}
 
-<header class="topbar">
-  <a class="brand" href="index.html">Denkraum</a>
-  <nav class="nav">
-    <a href="index.html" class="nav-link">Tools</a>
-    <a href="#" class="nav-link">About</a>
-    <a href="#" class="nav-link">Profile</a>
-  </nav>
-</header>
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #f7f8fa;
+  color: #111;
+}
 
-<main class="container page">
-  <header class="page-header">
-    <h1 class="page-title">Impressum</h1>
-    <p class="page-subtitle">Angaben gemäß § 5 DDG</p>
-  </header>
+/* HEADER */
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-  <section class="content">
-    <h2>Dienstanbieter</h2>
-    <p>
-      Denkraum<br />
-      [Vorname Nachname]<br />
-      [Straße Hausnummer]<br />
-      [PLZ Ort]<br />
-      Deutschland
-    </p>
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    <h2>Kontakt</h2>
-    <p>
-      E-Mail: <a href="mailto:[deine@email.de]">[deine@email.de]</a>
-    </p>
+.logo {
+  font-size: 26px;
+  font-weight: 700;
+}
 
-    <h2>Verantwortlich für den Inhalt</h2>
-    <p>
-      Verantwortlich i.S.d. § 18 Abs. 2 MStV:<br />
-      [Vorname Nachname]<br />
-      [Straße Hausnummer]<br />
-      [PLZ Ort]<br />
-      Deutschland
-    </p>
+.nav {
+  display: flex;
+  gap: 20px;
+}
 
-    <h2>Haftung für Inhalte</h2>
-    <p>
-      Als Diensteanbieter sind wir gemäß den allgemeinen Gesetzen für eigene Inhalte auf diesen Seiten verantwortlich.
-      Wir übernehmen jedoch keine Gewähr für die Aktualität, Vollständigkeit und Richtigkeit der bereitgestellten Inhalte.
-    </p>
+.nav-link {
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
 
-    <h2>Haftung für Links</h2>
-    <p>
-      Unser Angebot enthält ggf. Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben.
-      Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen.
-    </p>
+.nav-link.active {
+  color: #111;
+  font-weight: 600;
+}
 
-    <h2>Urheberrecht</h2>
-    <p>
-      Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht.
-      Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts
-      bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.
-    </p>
-  </section>
-</main>
+/* MAIN */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+}
 
-<footer class="footer">
-  <div class="footer-inner container">
-    <div class="footer-links">
-      <a class="footer-link" href="impressum.html" aria-current="page">Impressum</a>
-      <a class="footer-link" href="privacy.html">Datenschutzerklärung</a>
-    </div>
-    <div class="footer-note">© <span id="year"></span> Denkraum</div>
-  </div>
-</footer>
+/* HERO */
+.hero {
+  margin-bottom: 48px;
+}
 
-<script>
-  document.getElementById('year').textContent = new Date().getFullYear();
-</script>
+.hero h1 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+}
 
-</body>
-</html>
+.hero p {
+  margin-top: 12px;
+  font-size: 18px;
+  color: #555;
+}
+
+/* MODULE GRID */
+.modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 28px;
+}
+
+/* CARD */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.card p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.4;
+}
+
+/* BUTTON */
+.btn {
+  margin-top: auto;
+  display: inline-block;
+  padding: 10px 14px;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+/* COMING SOON */
+.coming {
+  margin-top: auto;
+  font-size: 13px;
+  color: #888;
+}
+
+/* FOOTER */
+.footer {
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links a {
+  margin-right: 16px;
+  text-decoration: none;
+  color: #555;
+  font-size: 14px;
+}
+
+.footer-copy {
+  font-size: 14px;
+  color: #555;
+}
+
+/* MOBILE */
+@media (max-width: 640px) {
+  .header-inner,
+  .footer-inner {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .nav {
+    gap: 14px;
+  }
+}
