@@ -1,224 +1,178 @@
-document.addEventListener("DOMContentLoaded", () => {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Denkraum — Real Speech</title>
 
-  const input = document.getElementById("searchInput");
-  const resultsEl = document.getElementById("results");
-  const statusEl = document.getElementById("status");
-  const playerWrap = document.getElementById("playerWrap");
-  const player = document.getElementById("player");
-  const recentEl = document.getElementById("recent");
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 60;
-  const START_OFFSET = 4;
-  const DEBOUNCE = 300;
+<link rel="stylesheet" href="./style.css" />
 
-  // paging по "сырым" хитам
-  let currentQuery = "";
-  let rawOffset = 0;
-  let loading = false;
-  let total = 0;
-  let debounceTimer = null;
+<style>
+body{ margin:0; font-family:Inter, sans-serif; }
 
-  // dedupe по видео на клиенте (убирает миллион одинаковых карточек)
-  const shownVideoIds = new Set();
+.rs-top{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:#f8f9ff;
+  padding:30px 40px;
+  border-bottom:1px solid #e5e7eb;
+}
 
-  function stopPlayer(){
-    player.src = "";
-    playerWrap.style.display = "none";
-  }
+.rs-title{ font-size:28px; font-weight:700; margin-bottom:10px; }
+.rs-sub{ font-size:14px; color:#64748b; margin-bottom:15px; }
 
-  function openVideo(id, sec){
-    const s = Math.max(0, sec - START_OFFSET);
-    player.src = `https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
-    playerWrap.style.display = "block";
-  }
+#searchInput{
+  width:340px;
+  padding:12px 16px;
+  font-size:16px;
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  outline:none;
+}
 
-  function escapeHtml(str){
-    return String(str)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+#recent{
+  margin-top:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+}
 
-  // формат времени: mm:ss или h:mm:ss
-  function formatTime(sec){
-    sec = Number(sec) || 0;
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = sec % 60;
+.chip{
+  padding:6px 12px;
+  background:#e5e7eb;
+  border-radius:999px;
+  font-size:13px;
+  cursor:pointer;
+  transition:.2s;
+}
 
-    if (h > 0) {
-      return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-    }
-    return `${m}:${String(s).padStart(2,"0")}`;
-  }
+.chip:hover{ background:#d1d5db; }
 
-  // highlight: подсвечиваем совпадения даже с пунктуацией/внутри слова
-  function highlight(text, word){
-    const safeText = escapeHtml(text);
-    const w = String(word || "").trim();
-    if (!w) return safeText;
+.clear-btn{
+  font-size:12px;
+  color:#ef4444;
+  cursor:pointer;
+  margin-left:10px;
+}
 
-    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`(${escaped})`, "gi");
-    return safeText.replace(re, "<mark>$1</mark>");
-  }
+#playerWrap{ margin-top:20px; display:none; }
+#playerWrap iframe{
+  width:100%;
+  height:380px;
+  border-radius:18px;
+  border:none;
+}
 
-  function saveRecent(word){
-    const w = String(word || "").trim();
-    if(!w) return;
+#status{ padding:20px 40px 0; font-size:14px; color:#64748b; }
 
-    let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
-    arr = arr.filter(x => x !== w);
-    arr.unshift(w);
-    arr = arr.slice(0, 12);
-    localStorage.setItem("recentWords", JSON.stringify(arr));
-    renderRecent();
-  }
+.rs-grid{
+  padding:20px 40px 60px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:24px;
+}
 
-  function renderRecent(){
-    recentEl.innerHTML = "";
-    const arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
-    arr.forEach(w => {
-      const chip = document.createElement("div");
-      chip.className = "chip";
-      chip.textContent = w;
-      chip.onclick = () => startSearch(w, true);
-      recentEl.appendChild(chip);
-    });
-  }
+.card{
+  background:#fff;
+  border-radius:18px;
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  transition:.25s;
+  opacity:0;
+  transform:translateY(10px);
+  animation:fadeIn .35s ease forwards;
+}
 
-  function card(item){
-    if (!item || !item.videoId) return null;
+.card:hover{ transform:translateY(-6px); }
 
-    // dedupe по видео (одна карточка на видео)
-    if (shownVideoIds.has(item.videoId)) return null;
-    shownVideoIds.add(item.videoId);
+@keyframes fadeIn{
+  to{ opacity:1; transform:translateY(0); }
+}
 
-    const el = document.createElement("div");
-    el.className = "card";
+.thumb{ width:100%; aspect-ratio:16/9; object-fit:cover; }
 
-    const snippetHtml = highlight(item.text || "", currentQuery);
-    const badge = formatTime(item.start);
+.meta{ padding:12px 14px; }
 
-    el.innerHTML = `
-      <div class="thumbwrap">
-        <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg" loading="lazy">
-        <div class="time-badge">${badge}</div>
-      </div>
-      <div class="meta">
-        <div class="snippet">${snippetHtml}</div>
-      </div>
-    `;
+.snippet{ font-size:14px; line-height:1.5; }
 
-    el.onclick = () => openVideo(item.videoId, item.start || 0);
-    return el;
-  }
+mark{
+  background:#fde047;
+  padding:2px 4px;
+  border-radius:4px;
+  font-weight:600;
+}
 
-  async function fetchPage(){
-    const res = await fetch(
-      `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${rawOffset}`
-    );
-    return await res.json();
-  }
+.thumbwrap{ position:relative; }
 
-  async function startSearch(q, save=false){
-    const qq = String(q || "").trim();
-    if (!qq) return;
+.time-badge{
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  background:rgba(0,0,0,0.85);
+  color:#fff;
+  font-size:12px;
+  padding:4px 6px;
+  border-radius:4px;
+  font-weight:700;
+}
 
-    stopPlayer();
+.scroll-top{
+  position:fixed;
+  right:25px;
+  bottom:25px;
+  background:#111827;
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  display:none;
+}
+</style>
+</head>
 
-    if (save) saveRecent(qq);
+<body>
+<div class="page">
 
-    currentQuery = qq;
-    rawOffset = 0;
-    total = 0;
-    loading = false;
-    resultsEl.innerHTML = "";
-    shownVideoIds.clear();
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="./index.html">Denkraum</a>
+    <nav class="nav">
+      <a href="./index.html">Tools</a>
+      <a href="./about.html">About</a>
+    </nav>
+  </div>
+</header>
 
-    await loadNextFillScreen();
-  }
+<div class="rs-top">
+  <div class="rs-title">Real Speech</div>
+  <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
 
-  // грузим страницы, пока:
-  // - не набрали достаточно карточек
-  // - и/или пока экран "пустой"
-  async function loadNextFillScreen(){
-    let guard = 0;
+  <input id="searchInput" placeholder="Type a word and press Enter…" />
 
-    while (guard < 6) {
-      guard++;
-      const before = resultsEl.childElementCount;
+  <div id="recent">
+    <div id="clearHistory" class="clear-btn">clear</div>
+  </div>
 
-      await loadNext();
+  <div id="playerWrap">
+    <iframe id="player" allow="autoplay"></iframe>
+  </div>
+</div>
 
-      const after = resultsEl.childElementCount;
+<div id="status"></div>
+<div id="results" class="rs-grid"></div>
 
-      if (after === before) break;
-      if (document.body.offsetHeight < window.innerHeight + 200) continue;
+<button class="scroll-top" id="scrollTopBtn">↑</button>
 
-      break;
-    }
-  }
+</div>
 
-  async function loadNext(){
-    if (loading) return;
-    if (total && rawOffset >= total) return;
-
-    loading = true;
-
-    const data = await fetchPage();
-    const list = data.results || [];
-
-    total = data.totalCount || 0;
-
-    // rawOffset по сырым хитам
-    rawOffset += list.length;
-
-    let added = 0;
-    for (const item of list) {
-      const el = card(item);
-      if (el) {
-        resultsEl.appendChild(el);
-        added++;
-      }
-    }
-
-    statusEl.textContent = `Results: ${total} • shown unique videos: ${resultsEl.childElementCount}`;
-
-    loading = false;
-
-    // если уникальных добавилось мало — догружаем
-    if (added < Math.max(8, Math.floor(PAGE_SIZE * 0.25)) && rawOffset < total) {
-      await loadNextFillScreen();
-    }
-  }
-
-  window.addEventListener("scroll", () => {
-    if (window.innerHeight + window.scrollY > document.body.offsetHeight - 700) {
-      loadNextFillScreen();
-    }
-  });
-
-  input.addEventListener("input", () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      if (input.value.trim().length >= 2) {
-        // автопоиск НЕ сохраняем в историю
-        startSearch(input.value, false);
-      }
-    }, DEBOUNCE);
-  });
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      clearTimeout(debounceTimer);
-      // Enter — финальный, сохраняем
-      startSearch(input.value, true);
-    }
-  });
-
-  renderRecent();
-});
+<script src="./pronunciation.js"></script>
+</body>
+</html>
