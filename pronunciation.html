@@ -6,36 +6,17 @@
 <title>Denkraum — Real Speech</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="./style.css" />
 
 <style>
 :root{
-  /* высота хедера (подгони если нужно) */
   --header-h: 64px;
 }
 
 body{ margin:0; font-family:Inter, sans-serif; }
 
-/* ✅ Denkraum всегда виден */
-.header{
-  position: sticky;
-  top: 0;
-  z-index: 3000;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* если твой header-inner выше/ниже — подгони --header-h */
-.header-inner{
-  min-height: var(--header-h);
-  display:flex;
-  align-items:center;
-}
-
-/* ✅ поиск + плеер тоже всегда видны, но ниже хедера */
 .rs-top{
   position: sticky;
   top: var(--header-h);
@@ -71,10 +52,7 @@ body{ margin:0; font-family:Inter, sans-serif; }
   border-radius:999px;
   font-size:13px;
   cursor:pointer;
-  transition:.2s;
 }
-
-.chip:hover{ background:#d1d5db; }
 
 .clear-btn{
   font-size:12px;
@@ -98,24 +76,6 @@ body{ margin:0; font-family:Inter, sans-serif; }
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
   gap:24px;
-}
-
-.card{
-  background:#fff;
-  border-radius:18px;
-  overflow:hidden;
-  cursor:pointer;
-  box-shadow:0 8px 24px rgba(0,0,0,0.08);
-  transition:.25s;
-  opacity:0;
-  transform:translateY(10px);
-  animation:fadeIn .35s ease forwards;
-}
-
-.card:hover{ transform:translateY(-6px); }
-
-@keyframes fadeIn{
-  to{ opacity:1; transform:translateY(0); }
 }
 
 .thumb{ width:100%; aspect-ratio:16/9; object-fit:cover; }
@@ -143,19 +103,6 @@ mark{
   padding:4px 6px;
   border-radius:4px;
   font-weight:700;
-}
-
-.scroll-top{
-  position:fixed;
-  right:25px;
-  bottom:25px;
-  background:#111827;
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:999px;
-  cursor:pointer;
-  display:none;
 }
 </style>
 </head>
@@ -190,10 +137,6 @@ mark{
 
 <div id="status"></div>
 <div id="results" class="rs-grid"></div>
-
-<button class="scroll-top" id="scrollTopBtn">↑</button>
-
-</div>
 
 <script src="./pronunciation.js"></script>
 </body>
