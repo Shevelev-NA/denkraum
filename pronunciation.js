@@ -17,35 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let offset = 0;
   let loading = false;
   let done = false;
+  let loadedVideos = new Set();
 
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-  }
-
-  function saveRecent(q){
-    let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
-    arr = arr.filter(x => x !== q);
-    arr.unshift(q);
-    arr = arr.slice(0,10);
-    localStorage.setItem("recentWords", JSON.stringify(arr));
-    renderRecent();
-  }
-
-  function renderRecent(){
-    recentEl.innerHTML="";
-    const arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
-    arr.forEach(word=>{
-      const chip = document.createElement("div");
-      chip.className="chip";
-      chip.textContent=word;
-      chip.onclick=()=>{
-        input.value=word;
-        startSearch(word);
-      };
-      recentEl.appendChild(chip);
-    });
   }
 
   function openEmbed(videoId,startSec){
@@ -55,6 +32,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cardElement(item){
+    if (loadedVideos.has(item.videoId)) return null;
+    loadedVideos.add(item.videoId);
+
     const start = Math.max(0,item.start-START_OFFSET_SEC);
     const card=document.createElement("div");
     card.className="card";
@@ -77,10 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
   async function startSearch(q){
     q=q.trim();
     if(!q) return;
-    saveRecent(q);
     currentQuery=q;
     offset=0;
     done=false;
+    loadedVideos.clear();
     resultsEl.innerHTML="";
     playerWrap.style.display="none";
     await loadNext();
@@ -92,7 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
     loadMoreEl.style.display="flex";
     const data=await fetchPage(currentQuery,offset);
     const list=data.results||[];
-    list.forEach(item=>resultsEl.appendChild(cardElement(item)));
+
+    list.forEach(item=>{
+      const card=cardElement(item);
+      if(card) resultsEl.appendChild(card);
+    });
+
     offset+=list.length;
     if(list.length<PAGE_SIZE) done=true;
     statusEl.textContent=`Results: ${data.totalCount} • shown: ${offset}${done?" • end":""}`;
@@ -110,6 +95,4 @@ document.addEventListener("DOMContentLoaded", () => {
   input.addEventListener("keydown",e=>{
     if(e.key==="Enter") startSearch(input.value);
   });
-
-  renderRecent();
 });
