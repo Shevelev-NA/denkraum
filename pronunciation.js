@@ -51,17 +51,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  /* 🔥 НОВОЕ: highlight */
+  function highlight(text, word){
+    if(!word) return text;
+
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
+
+    return text.replace(regex, '<mark>$1</mark>');
+  }
+
   function card(item){
     if(loadedVideos.has(item.videoId)) return null;
     loadedVideos.add(item.videoId);
 
     const el=document.createElement("div");
     el.className="card";
+
+    const highlightedText = highlight(item.text, currentQuery);
+
     el.innerHTML=`
       <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
       <div class="meta">
         <div class="time">${item.start}s</div>
-        <div class="snippet">${item.text}</div>
+        <div class="snippet">${highlightedText}</div>
       </div>
     `;
 
@@ -122,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(debounceTimer);
     debounceTimer=setTimeout(()=>{
       if(input.value.trim().length>=2){
-        startSearch(input.value,false); // НЕ сохраняем
+        startSearch(input.value,false);
       }
     },DEBOUNCE);
   });
@@ -130,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   input.addEventListener("keydown",e=>{
     if(e.key==="Enter"){
       clearTimeout(debounceTimer);
-      startSearch(input.value,true); // сохраняем только финальное
+      startSearch(input.value,true);
     }
   });
 
