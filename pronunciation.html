@@ -14,7 +14,10 @@
   --muted:#64748b;
 }
 
-body{ background:var(--bg); color:var(--text); }
+body{
+  background:var(--bg);
+  color:var(--text);
+}
 
 .main{
   max-width:100%;
@@ -26,11 +29,20 @@ body{ background:var(--bg); color:var(--text); }
   padding:30px 40px 60px;
 }
 
+.rs-search-block{
+  margin-bottom:18px;
+}
+
+.rs-search-text{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
 .rs-search{
   display:flex;
   align-items:center;
   gap:10px;
-  margin-bottom:10px;
 }
 
 .rs-search input{
@@ -39,17 +51,19 @@ body{ background:var(--bg); color:var(--text); }
   border:1px solid #cbd5e1;
   border-radius:6px;
   color:var(--text);
+  width:260px;
 }
 
 .rs-search input::placeholder{
   color:var(--muted);
+  opacity:1;
 }
 
 .rs-recent{
   display:flex;
   flex-wrap:wrap;
   gap:8px;
-  margin-bottom:20px;
+  margin:12px 0 20px;
 }
 
 .chip{
@@ -108,7 +122,7 @@ body{ background:var(--bg); color:var(--text); }
 .rs-player-wrap{
   position:sticky;
   top:0;
-  z-index:999;
+  z-index:1000;
   background:var(--bg);
   padding:10px 0;
   display:none;
@@ -147,13 +161,21 @@ body{ background:var(--bg); color:var(--text); }
 
     <h1>Real Speech</h1>
 
-    <div class="rs-search">
-      <input id="searchInput" placeholder="Type word..." />
-      <button id="searchBtn">Search</button>
-      <button id="themeToggle">Dark</button>
+    <div class="rs-search-block">
+      <div class="rs-search-text">
+        Search subtitles and play YouTube a few seconds before the match.
+      </div>
+
+      <div class="rs-search">
+        <input id="searchInput"
+               placeholder="Type a word (e.g. fahren) and press Enter…" />
+        <button id="searchBtn">Search</button>
+        <button id="themeToggle">Dark</button>
+      </div>
     </div>
 
     <div id="recent" class="rs-recent"></div>
+
     <div id="status"></div>
 
     <div id="playerWrap" class="rs-player-wrap">
