@@ -1,76 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Denkraum — Pronunciation</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="./style.css" />
-</head>
-<body>
-<div class="page">
-
-<header class="header">
-  <div class="header-inner">
-    <a class="logo" href="./index.html">Denkraum</a>
-    <nav class="nav">
-      <a href="./index.html">Tools</a>
-      <a href="./about.html">About</a>
-    </nav>
-  </div>
-</header>
-
-<main class="main tool">
-  <h1 class="tool-title">Pronunciation · Real speech</h1>
-
-  <!-- SEARCH -->
-  <div class="controls">
-    <input
-      id="query"
-      class="textarea"
-      placeholder="Enter word or phrase…"
-    />
-    <button class="btn" id="btn-search">Search</button>
-  </div>
-
-  <!-- PLAYER -->
-  <div id="player-wrapper" style="margin:16px 0; display:none;">
-    <iframe
-      id="player"
-      width="100%"
-      height="220"
-      frameborder="0"
-      allow="autoplay; encrypted-media"
-      allowfullscreen>
-    </iframe>
-  </div>
-
-  <!-- RESULTS -->
-  <div id="results" class="output"></div>
-
-  <div style="margin-top:16px;">
-    <button class="btn btn-ghost" id="btn-more" style="display:none;">
-      Show 20 more
-    </button>
-  </div>
-</main>
-
-<footer class="footer">
-  <div class="footer-inner">
-    <a href="./index.html">← Back</a>
-  </div>
-</footer>
-
-</div>
-
 <script>
-/* ===== FRONTEND → BACKEND CONNECTION ===== */
-
-const API_URL = "http://localhost:3001/search";
+const API_URL = "http://localhost:3001/api/search";
 
 const resultsEl = document.getElementById("results");
 const player = document.getElementById("player");
@@ -79,6 +8,7 @@ const btnMore = document.getElementById("btn-more");
 
 let page = 1;
 let currentQuery = "";
+const PAGE_SIZE = 20;
 
 document.getElementById("btn-search").onclick = () => {
   currentQuery = document.getElementById("query").value.trim();
@@ -95,24 +25,32 @@ btnMore.onclick = () => {
 };
 
 async function loadResults() {
-  const url = `${API_URL}?q=${encodeURIComponent(currentQuery)}&page=${page}`;
+  const limit = PAGE_SIZE * page;
+
+  const url = `${API_URL}?query=${encodeURIComponent(currentQuery)}&count=${limit}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  data.results.forEach(item => {
+  renderResults(data.results.slice((page - 1) * PAGE_SIZE));
+}
+
+function renderResults(list) {
+  list.forEach(item => {
     const row = document.createElement("div");
     row.className = "line";
+
+    const snippet = buildSnippet(item.text, currentQuery);
 
     row.innerHTML = `
       <div>
         <strong>${item.title}</strong><br/>
-        ${highlight(item.text, currentQuery)}
+        ${snippet}
       </div>
       <button class="btn btn-ghost">▶</button>
     `;
 
     row.querySelector("button").onclick = () => {
-      play(item.videoId, item.start);
+      play(item.videoId, item.start - 2);
     };
 
     resultsEl.appendChild(row);
@@ -122,16 +60,30 @@ async function loadResults() {
 }
 
 function play(videoId, start) {
-  player.src = `https://www.youtube.com/embed/${videoId}?start=${start}&autoplay=1`;
+  const s = Math.max(0, start);
+  player.src = `https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1`;
   playerWrapper.style.display = "block";
   playerWrapper.scrollIntoView({ behavior: "smooth" });
 }
 
-function highlight(text, query) {
+function buildSnippet(text, query) {
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const pos = lower.indexOf(q);
+
+  if (pos === -1) return text;
+
+  const start = Math.max(0, pos - 40);
+  const end = Math.min(text.length, pos + q.length + 40);
+
+  let snippet = text.substring(start, end);
+
   const re = new RegExp(`(${query})`, "ig");
-  return text.replace(re, "<mark>$1</mark>");
+  snippet = snippet.replace(re, "<mark>$1</mark>");
+
+  if (start > 0) snippet = "… " + snippet;
+  if (end < text.length) snippet = snippet + " …";
+
+  return snippet;
 }
 </script>
-
-</body>
-</html>
