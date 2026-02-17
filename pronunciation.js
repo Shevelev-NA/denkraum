@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const scrollBtn = document.getElementById("scrollTopBtn");
 
   const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 60;
+  const PAGE_SIZE = 10;
   const START_OFFSET = 4;
   const DEBOUNCE = 300;
   const MAX_HISTORY = 10;
