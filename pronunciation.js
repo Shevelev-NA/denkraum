@@ -5,121 +5,98 @@ document.addEventListener("DOMContentLoaded", () => {
   const playerWrap = document.getElementById("playerWrap");
   const player = document.getElementById("player");
   const recentEl = document.getElementById("recent");
+  const typeFilterEl = document.getElementById("typeFilter");
 
   const API_URL = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 60;
-  const START_OFFSET_SEC = 3;
+
+  const PAGE_SIZE = 40;          // ✅
+  const START_OFFSET_SEC = 4;    // ✅ видео за 4 секунды
 
   let currentQuery = "";
   let offset = 0;
   let loading = false;
   let done = false;
   let loadedVideos = new Set();
+  let debounceTimer = null;
 
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
-    return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
-  function stopPlayer(){
-    player.src="";
-    playerWrap.style.display="none";
+  function stopPlayer() {
+    player.src = "";
+    playerWrap.style.display = "none";
   }
 
-  function openEmbed(videoId,startSec){
-    const s = Math.max(0,startSec);
-    player.src=`https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1`;
-    playerWrap.style.display="block";
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
-  function saveRecent(q){
-    let arr = JSON.parse(localStorage.getItem("recentWords")||"[]");
-    arr = arr.filter(x=>x!==q);
+  function highlight(text, q) {
+    if (!q) return escapeHtml(text);
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(${safe})`, "gi");
+    return escapeHtml(text).replace(re, "<mark>$1</mark>");
+  }
+
+  function saveRecent(q) {
+    let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr = arr.filter((x) => x !== q);
     arr.unshift(q);
-    arr = arr.slice(0,10);
-    localStorage.setItem("recentWords",JSON.stringify(arr));
+    arr = arr.slice(0, 10);
+    localStorage.setItem("recentWords", JSON.stringify(arr));
     renderRecent();
   }
 
-  function renderRecent(){
-    recentEl.innerHTML="";
-    const arr = JSON.parse(localStorage.getItem("recentWords")||"[]");
-    arr.forEach(word=>{
-      const chip=document.createElement("div");
-      chip.className="chip";
-      chip.textContent=word;
-      chip.onclick=()=>startSearch(word);
+  function renderRecent() {
+    recentEl.innerHTML = "";
+    const arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr.forEach((word) => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = word;
+      chip.onclick = () => startSearch(word, true);
       recentEl.appendChild(chip);
     });
   }
 
-  function cardElement(item){
-    if(loadedVideos.has(item.videoId)) return null;
+  function openEmbed(videoId, startSec) {
+    const s = Math.max(0, startSec);
+    player.src = `https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1&rel=0&modestbranding=1`;
+    playerWrap.style.display = "block";
+  }
+
+  function cardElement(item) {
+    if (loadedVideos.has(item.videoId)) return null;
     loadedVideos.add(item.videoId);
 
-    const start=Math.max(0,item.start-START_OFFSET_SEC);
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`
-      <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+    const start = Math.max(0, item.start - START_OFFSET_SEC);
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const type = item.type || "unknown";
+    const channel = item.channel || "Unknown";
+
+    const snippetHtml = highlight(item.text || "", currentQuery);
+
+    card.innerHTML = `
+      <div class="thumb-wrap">
+        <img loading="lazy" class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg" alt="">
+        <div class="thumb-overlay">
+          <div class="badge-row">
+            <span class="badge badge-type">${escapeHtml(type)}</span>
+            <span class="badge badge-channel">${escapeHtml(channel)}</span>
+          </div>
+          <div class="time-pill">${formatTime(start)}</div>
+        </div>
+      </div>
       <div class="meta">
-        <div class="time">${formatTime(start)}</div>
-        <div class="snippet">${item.text}</div>
-      </div>`;
-    card.onclick=()=>openEmbed(item.videoId,start);
-    return card;
-  }
-
-  async function fetchPage(q,pageOffset){
-    const res=await fetch(`${API_URL}?query=${encodeURIComponent(q)}&count=${PAGE_SIZE}&offset=${pageOffset}`);
-    return await res.json();
-  }
-
-  async function startSearch(q){
-    q=q.trim();
-    if(!q) return;
-
-    stopPlayer();                // 🔥 остановка старого видео
-    saveRecent(q);
-
-    currentQuery=q;
-    offset=0;
-    done=false;
-    loadedVideos.clear();
-    resultsEl.innerHTML="";
-
-    await loadNext();
-  }
-
-  async function loadNext(){
-    if(loading||done) return;
-    loading=true;
-
-    const data=await fetchPage(currentQuery,offset);
-    const list=data.results||[];
-
-    list.forEach(item=>{
-      const card=cardElement(item);
-      if(card) resultsEl.appendChild(card);
-    });
-
-    offset+=list.length;
-    if(list.length<PAGE_SIZE) done=true;
-
-    statusEl.textContent=`Results: ${data.totalCount} • shown: ${offset}`;
-    loading=false;
-  }
-
-  window.addEventListener("scroll",()=>{
-    if(window.innerHeight+window.scrollY>document.body.offsetHeight-600){
-      loadNext();
-    }
-  });
-
-  input.addEventListener("keydown",e=>{
-    if(e.key==="Enter") startSearch(input.value);
-  });
-
-  renderRecent();
-});
+        <div class="snippet">${snippetHtml}</div
