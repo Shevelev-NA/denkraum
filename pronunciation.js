@@ -12,110 +12,203 @@ document.addEventListener("DOMContentLoaded", () => {
   const START_OFFSET = 4;
   const DEBOUNCE = 300;
 
-  let currentQuery="";
-  let offset=0;
-  let loading=false;
-  let total=0;
-  let debounceTimer=null;
+  // paging по "сырым" хитам
+  let currentQuery = "";
+  let rawOffset = 0;
+  let loading = false;
+  let total = 0;
+  let debounceTimer = null;
+
+  // dedupe по видео на клиенте (убирает миллион одинаковых карточек)
+  const shownVideoIds = new Set();
 
   function stopPlayer(){
-    player.src="";
-    playerWrap.style.display="none";
+    player.src = "";
+    playerWrap.style.display = "none";
   }
 
-  function openVideo(id,sec){
-    const s=Math.max(0,sec-START_OFFSET);
-    player.src=`https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
-    playerWrap.style.display="block";
+  function openVideo(id, sec){
+    const s = Math.max(0, sec - START_OFFSET);
+    player.src = `https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
+    playerWrap.style.display = "block";
   }
 
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  // highlight: подсвечиваем совпадения даже с пунктуацией/внутри слова
   function highlight(text, word){
-    if(!word) return text;
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
-    return text.replace(regex, '<mark>$1</mark>');
+    const safeText = escapeHtml(text);
+    const w = String(word || "").trim();
+    if (!w) return safeText;
+
+    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(${escaped})`, "gi");
+    return safeText.replace(re, "<mark>$1</mark>");
+  }
+
+  function saveRecent(word){
+    const w = String(word || "").trim();
+    if(!w) return;
+
+    let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr = arr.filter(x => x !== w);
+    arr.unshift(w);
+    arr = arr.slice(0, 12);
+    localStorage.setItem("recentWords", JSON.stringify(arr));
+    renderRecent();
+  }
+
+  function renderRecent(){
+    recentEl.innerHTML = "";
+    const arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr.forEach(w => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = w;
+      chip.onclick = () => startSearch(w, true);
+      recentEl.appendChild(chip);
+    });
   }
 
   function card(item){
-    const el=document.createElement("div");
-    el.className="card";
+    if (!item || !item.videoId) return null;
 
-    const highlighted = highlight(item.text, currentQuery);
+    // dedupe
+    if (shownVideoIds.has(item.videoId)) return null;
+    shownVideoIds.add(item.videoId);
 
-    el.innerHTML=`
+    const el = document.createElement("div");
+    el.className = "card";
+
+    const snippetHtml = highlight(item.text || "", currentQuery);
+
+    el.innerHTML = `
       <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
       <div class="meta">
         <div class="time">${item.start}s</div>
-        <div class="snippet">${highlighted}</div>
+        <div class="snippet">${snippetHtml}</div>
       </div>
     `;
-    el.onclick=()=>openVideo(item.videoId,item.start);
+
+    el.onclick = () => openVideo(item.videoId, item.start || 0);
     return el;
   }
 
   async function fetchPage(){
-    const res=await fetch(
-      `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${offset}`
+    const res = await fetch(
+      `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${rawOffset}`
     );
     return await res.json();
   }
 
-  async function startSearch(q){
-    q=q.trim();
-    if(!q) return;
+  async function startSearch(q, save=false){
+    const qq = String(q || "").trim();
+    if (!qq) return;
 
     stopPlayer();
 
-    currentQuery=q;
-    offset=0;
-    total=0;
-    resultsEl.innerHTML="";
+    if (save) saveRecent(qq);
 
-    await loadNext();
+    currentQuery = qq;
+    rawOffset = 0;
+    total = 0;
+    loading = false;
+    resultsEl.innerHTML = "";
+    shownVideoIds.clear();
 
-    // автодогрузка если экран пустой
-    setTimeout(()=>{
-      if(document.body.offsetHeight < window.innerHeight){
-        loadNext();
-      }
-    },200);
+    await loadNextFillScreen();
+  }
+
+  // грузим страницы, пока:
+  // - не набрали достаточно уникальных видео
+  // - и/или пока экран "пустой"
+  async function loadNextFillScreen(){
+    // защита от бесконечного цикла
+    let guard = 0;
+
+    while (guard < 6) {
+      guard++;
+      const before = resultsEl.childElementCount;
+
+      await loadNext();
+
+      const after = resultsEl.childElementCount;
+
+      // если ничего нового не добавили — смысла дальше долбиться нет
+      if (after === before) break;
+
+      // если контента всё ещё мало для экрана — догружаем
+      if (document.body.offsetHeight < window.innerHeight + 200) continue;
+
+      // контента хватает
+      break;
+    }
   }
 
   async function loadNext(){
-    if(loading) return;
-    if(total && offset >= total) return;
+    if (loading) return;
+    if (total && rawOffset >= total) return;
 
-    loading=true;
+    loading = true;
 
-    const data=await fetchPage();
-    const list=data.results||[];
+    const data = await fetchPage();
+    const list = data.results || [];
 
-    total=data.totalCount || 0;
+    total = data.totalCount || 0;
 
-    list.forEach(item=>{
-      resultsEl.appendChild(card(item));
-    });
+    // rawOffset увеличиваем на количество "сырых" хитов,
+    // иначе paging по Meili ломается
+    rawOffset += list.length;
 
-    offset+=list.length;
+    let added = 0;
+    for (const item of list) {
+      const el = card(item);
+      if (el) {
+        resultsEl.appendChild(el);
+        added++;
+      }
+    }
 
-    statusEl.textContent=`Results: ${total} • shown: ${offset}`;
+    statusEl.textContent = `Results: ${total} • shown unique videos: ${resultsEl.childElementCount}`;
 
-    loading=false;
+    loading = false;
+
+    // если пришла партия, но уникальных почти не добавилось — догрузить ещё
+    if (added < Math.max(8, Math.floor(PAGE_SIZE * 0.25)) && rawOffset < total) {
+      await loadNextFillScreen();
+    }
   }
 
-  window.addEventListener("scroll",()=>{
-    if(window.innerHeight+window.scrollY>document.body.offsetHeight-600){
-      loadNext();
+  window.addEventListener("scroll", () => {
+    if (window.innerHeight + window.scrollY > document.body.offsetHeight - 700) {
+      loadNextFillScreen();
     }
   });
 
-  input.addEventListener("input",()=>{
+  input.addEventListener("input", () => {
     clearTimeout(debounceTimer);
-    debounceTimer=setTimeout(()=>{
-      if(input.value.trim().length>=2){
-        startSearch(input.value);
+    debounceTimer = setTimeout(() => {
+      if (input.value.trim().length >= 2) {
+        // автопоиск НЕ сохраняем в историю
+        startSearch(input.value, false);
       }
-    },DEBOUNCE);
+    }, DEBOUNCE);
   });
 
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      clearTimeout(debounceTimer);
+      // Enter — это "финальный" запрос, сохраняем
+      startSearch(input.value, true);
+    }
+  });
+
+  renderRecent();
 });
