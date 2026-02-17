@@ -1,89 +1,79 @@
-<script>
-const API_URL = "https://tech-enrollment-designs-supplier.trycloudflare.com/api/search";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Denkraum — Real Speech</title>
 
-const resultsEl = document.getElementById("results");
-const player = document.getElementById("player");
-const playerWrapper = document.getElementById("player-wrapper");
-const btnMore = document.getElementById("btn-more");
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-let page = 1;
-let currentQuery = "";
-const PAGE_SIZE = 20;
+  <link rel="stylesheet" href="./style.css" />
 
-document.getElementById("btn-search").onclick = () => {
-  currentQuery = document.getElementById("query").value.trim();
-  if (!currentQuery) return;
+  <style>
+    .rs-wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px; }
+    .rs-top { display:flex; gap:12px; align-items:center; margin: 14px 0 18px; }
+    .rs-top input { flex:1; padding: 12px 14px; border: 1px solid #d7e2ff; border-radius: 12px; font-size: 16px; }
+    .rs-top button { padding: 12px 14px; border-radius: 12px; border: 1px solid #d7e2ff; background:#2b6cff; color:#fff; font-weight:600; cursor:pointer; }
+    .rs-hint { color:#5b6b8c; font-size: 14px; margin-bottom: 12px; }
+    .rs-item { display:flex; gap:14px; padding: 14px 0; border-bottom: 1px solid #eef2ff; align-items:flex-start; }
+    .rs-thumb { width: 160px; border-radius: 12px; }
+    .rs-meta { flex:1; min-width: 0; }
+    .rs-title { font-weight:700; margin:0 0 6px; }
+    .rs-snippet { margin:0; color:#0f172a; line-height: 1.45; word-break: break-word; }
+    .rs-actions { display:flex; gap:10px; align-items:center; margin-top: 10px; }
+    .rs-actions a { text-decoration:none; font-weight:600; color:#2b6cff; }
+    mark { background: #ffe54c; padding: 0 3px; border-radius: 4px; }
+    .rs-player { margin-top: 18px; display:none; }
+    .rs-player iframe { width: 100%; height: 420px; border:0; border-radius: 14px; }
+  </style>
+</head>
+<body>
+<div class="page">
 
-  page = 1;
-  resultsEl.innerHTML = "";
-  loadResults();
-};
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="./index.html">Denkraum</a>
+    <nav class="nav">
+      <a href="./index.html">Tools</a>
+      <a href="./about.html">About</a>
+    </nav>
+  </div>
+</header>
 
-btnMore.onclick = () => {
-  page++;
-  loadResults();
-};
+<main class="main">
+  <div class="rs-wrap">
+    <h1 style="margin:0;">Real Speech</h1>
+    <div class="rs-hint">Search subtitles and open YouTube exactly around the moment.</div>
 
-async function loadResults() {
-  const limit = PAGE_SIZE * page;
+    <div class="rs-top">
+      <input id="searchInput" type="text" placeholder="Type a word (e.g. und) and press Enter…" />
+      <button id="searchBtn">Search</button>
+    </div>
 
-  const url = `${API_URL}?query=${encodeURIComponent(currentQuery)}&count=${limit}`;
-  const res = await fetch(url);
-  const data = await res.json();
+    <div id="status" class="rs-hint"></div>
 
-  renderResults(data.results.slice((page - 1) * PAGE_SIZE));
-}
+    <div id="results"></div>
 
-function renderResults(list) {
-  list.forEach(item => {
-    const row = document.createElement("div");
-    row.className = "line";
+    <div class="rs-player" id="playerBox">
+      <iframe id="player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+  </div>
+</main>
 
-    const snippet = buildSnippet(item.text, currentQuery);
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="./impressum.html">Impressum</a>
+      <a href="./privacy.html">Datenschutzerklärung</a>
+    </div>
+    <div>© 2026 Denkraum</div>
+  </div>
+</footer>
 
-    row.innerHTML = `
-      <div>
-        <strong>${item.title}</strong><br/>
-        ${snippet}
-      </div>
-      <button class="btn btn-ghost">▶</button>
-    `;
+</div>
 
-    row.querySelector("button").onclick = () => {
-      play(item.videoId, item.start - 2);
-    };
-
-    resultsEl.appendChild(row);
-  });
-
-  btnMore.style.display = "inline-block";
-}
-
-function play(videoId, start) {
-  const s = Math.max(0, start);
-  player.src = `https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1`;
-  playerWrapper.style.display = "block";
-  playerWrapper.scrollIntoView({ behavior: "smooth" });
-}
-
-function buildSnippet(text, query) {
-  const lower = text.toLowerCase();
-  const q = query.toLowerCase();
-  const pos = lower.indexOf(q);
-
-  if (pos === -1) return text;
-
-  const start = Math.max(0, pos - 40);
-  const end = Math.min(text.length, pos + q.length + 40);
-
-  let snippet = text.substring(start, end);
-
-  const re = new RegExp(`(${query})`, "ig");
-  snippet = snippet.replace(re, "<mark>$1</mark>");
-
-  if (start > 0) snippet = "… " + snippet;
-  if (end < text.length) snippet = snippet + " …";
-
-  return snippet;
-}
-</script>
+<script src="./pronunciation.js"></script>
+</body>
+</html>
