@@ -1,35 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Denkraum — Real Speech</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Denkraum — Real Speech</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="./style.css" />
+<link rel="stylesheet" href="./style.css" />
 
-  <style>
-    .rs-wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px; }
-    .rs-top { display:flex; gap:12px; align-items:center; margin: 14px 0 18px; }
-    .rs-top input { flex:1; padding: 12px 14px; border: 1px solid #d7e2ff; border-radius: 12px; font-size: 16px; }
-    .rs-top button { padding: 12px 14px; border-radius: 12px; border: 1px solid #d7e2ff; background:#2b6cff; color:#fff; font-weight:600; cursor:pointer; }
-    .rs-hint { color:#5b6b8c; font-size: 14px; margin-bottom: 12px; }
-    .rs-item { display:flex; gap:14px; padding: 14px 0; border-bottom: 1px solid #eef2ff; align-items:flex-start; }
-    .rs-thumb { width: 160px; border-radius: 12px; }
-    .rs-meta { flex:1; min-width: 0; }
-    .rs-title { font-weight:700; margin:0 0 6px; }
-    .rs-snippet { margin:0; color:#0f172a; line-height: 1.45; word-break: break-word; }
-    .rs-actions { display:flex; gap:10px; align-items:center; margin-top: 10px; }
-    .rs-actions a { text-decoration:none; font-weight:600; color:#2b6cff; }
-    mark { background: #ffe54c; padding: 0 3px; border-radius: 4px; }
-    .rs-player { margin-top: 18px; display:none; }
-    .rs-player iframe { width: 100%; height: 420px; border:0; border-radius: 14px; }
-  </style>
+<style>
+
+.rs-wrap { max-width:1200px; margin:0 auto; padding:30px 16px; }
+
+.rs-top {
+  display:flex;
+  gap:12px;
+  margin:20px 0;
+}
+
+.rs-top input {
+  flex:1;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid #dbe4ff;
+  font-size:16px;
+}
+
+.rs-top button {
+  padding:14px 18px;
+  border-radius:14px;
+  border:none;
+  background:#2b6cff;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.rs-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap:20px;
+}
+
+.rs-card {
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 4px 18px rgba(0,0,0,0.06);
+  cursor:pointer;
+  transition:all .25s ease;
+  opacity:0;
+  transform:translateY(10px);
+}
+
+.rs-card.show {
+  opacity:1;
+  transform:translateY(0);
+}
+
+.rs-card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.12);
+}
+
+.rs-thumb {
+  width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+}
+
+.rs-body {
+  padding:14px;
+}
+
+.rs-time {
+  font-size:13px;
+  color:#64748b;
+  margin-bottom:6px;
+}
+
+.rs-snippet {
+  font-size:15px;
+  line-height:1.5;
+}
+
+mark {
+  background:#ffe54c;
+  padding:2px 4px;
+  border-radius:4px;
+}
+
+.rs-player-wrap {
+  position:sticky;
+  top:0;
+  background:#f8faff;
+  padding:16px 0 24px;
+  z-index:50;
+  display:none;
+}
+
+.rs-player-wrap iframe {
+  width:100%;
+  height:460px;
+  border-radius:18px;
+  border:none;
+}
+
+.skeleton {
+  background:linear-gradient(90deg,#f1f5ff 25%,#e2e8ff 37%,#f1f5ff 63%);
+  background-size:400% 100%;
+  animation:skeleton 1.4s ease infinite;
+  height:200px;
+  border-radius:16px;
+}
+
+@keyframes skeleton {
+  0%{background-position:100% 50%}
+  100%{background-position:0 50%}
+}
+
+</style>
 </head>
 <body>
+
 <div class="page">
 
 <header class="header">
@@ -43,34 +138,23 @@
 </header>
 
 <main class="main">
-  <div class="rs-wrap">
-    <h1 style="margin:0;">Real Speech</h1>
-    <div class="rs-hint">Search subtitles and open YouTube exactly around the moment.</div>
+<div class="rs-wrap">
 
-    <div class="rs-top">
-      <input id="searchInput" type="text" placeholder="Type a word (e.g. und) and press Enter…" />
-      <button id="searchBtn">Search</button>
-    </div>
+<h1>Real Speech</h1>
 
-    <div id="status" class="rs-hint"></div>
+<div class="rs-top">
+  <input id="searchInput" placeholder="Search word..." />
+  <button id="searchBtn">Search</button>
+</div>
 
-    <div id="results"></div>
+<div class="rs-player-wrap" id="playerWrap">
+  <iframe id="player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+</div>
 
-    <div class="rs-player" id="playerBox">
-      <iframe id="player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>
-  </div>
+<div id="results" class="rs-grid"></div>
+
+</div>
 </main>
-
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="footer-links">
-      <a href="./impressum.html">Impressum</a>
-      <a href="./privacy.html">Datenschutzerklärung</a>
-    </div>
-    <div>© 2026 Denkraum</div>
-  </div>
-</footer>
 
 </div>
 
