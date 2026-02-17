@@ -6,7 +6,6 @@
 <title>Denkraum — Real Speech</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="./style.css" />
@@ -14,10 +13,8 @@
 <style>
 body{ margin:0; font-family:Inter, sans-serif; }
 
+/* ❌ УБРАН sticky */
 .rs-top{
-  position:sticky;
-  top:0;
-  z-index:1000;
   background:#f8f9ff;
   padding:30px 40px;
   border-bottom:1px solid #e5e7eb;
@@ -49,16 +46,6 @@ body{ margin:0; font-family:Inter, sans-serif; }
   border-radius:999px;
   font-size:13px;
   cursor:pointer;
-  transition:.2s;
-}
-
-.chip:hover{ background:#d1d5db; }
-
-.clear-btn{
-  font-size:12px;
-  color:#ef4444;
-  cursor:pointer;
-  margin-left:10px;
 }
 
 #playerWrap{ margin-top:20px; display:none; }
@@ -85,15 +72,6 @@ body{ margin:0; font-family:Inter, sans-serif; }
   cursor:pointer;
   box-shadow:0 8px 24px rgba(0,0,0,0.08);
   transition:.25s;
-  opacity:0;
-  transform:translateY(10px);
-  animation:fadeIn .35s ease forwards;
-}
-
-.card:hover{ transform:translateY(-6px); }
-
-@keyframes fadeIn{
-  to{ opacity:1; transform:translateY(0); }
 }
 
 .thumb{ width:100%; aspect-ratio:16/9; object-fit:cover; }
@@ -122,24 +100,10 @@ mark{
   border-radius:4px;
   font-weight:700;
 }
-
-.scroll-top{
-  position:fixed;
-  right:25px;
-  bottom:25px;
-  background:#111827;
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:999px;
-  cursor:pointer;
-  display:none;
-}
 </style>
 </head>
 
 <body>
-<div class="page">
 
 <header class="header">
   <div class="header-inner">
@@ -154,13 +118,8 @@ mark{
 <div class="rs-top">
   <div class="rs-title">Real Speech</div>
   <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
-
   <input id="searchInput" placeholder="Type a word and press Enter…" />
-
-  <div id="recent">
-    <div id="clearHistory" class="clear-btn">clear</div>
-  </div>
-
+  <div id="recent"></div>
   <div id="playerWrap">
     <iframe id="player" allow="autoplay"></iframe>
   </div>
@@ -168,10 +127,6 @@ mark{
 
 <div id="status"></div>
 <div id="results" class="rs-grid"></div>
-
-<button class="scroll-top" id="scrollTopBtn">↑</button>
-
-</div>
 
 <script src="./pronunciation.js"></script>
 </body>
