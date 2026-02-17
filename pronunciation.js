@@ -1,144 +1,94 @@
-// Real Speech (Subtitle Search) — frontend
-// API is your local backend exposed via Cloudflare Tunnel.
-// You can override API base with URL param: ?api=https://xxxxx.trycloudflare.com
-
 document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById("searchInput");
-  const btn = document.getElementById("searchBtn");
-  const resultsEl = document.getElementById("results");
-  const statusEl = document.getElementById("status");
-  const playerBox = document.getElementById("playerBox");
-  const player = document.getElementById("player");
 
-  if (!input || !btn || !resultsEl || !statusEl || !playerBox || !player) {
-    console.error("Missing required elements in pronunciation.html");
-    return;
+const API = "https://tech-enrollment-designs-supplier.trycloudflare.com/api/search";
+const START_OFFSET = 3;
+const COUNT = 20;
+
+const input = document.getElementById("searchInput");
+const btn = document.getElementById("searchBtn");
+const results = document.getElementById("results");
+const playerWrap = document.getElementById("playerWrap");
+const player = document.getElementById("player");
+
+function formatTime(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,"0");
+  const s = Math.floor(sec%60).toString().padStart(2,"0");
+  return `${m}:${s}`;
+}
+
+function cleanText(t){
+  return String(t)
+    .replace(/<[^>]*>/g,"")
+    .replaceAll("&amp;","&")
+    .replaceAll("&lt;","<")
+    .replaceAll("&gt;",">");
+}
+
+function highlight(text, query){
+  const re = new RegExp(`(${query})`, "ig");
+  return text.replace(re, "<mark>$1</mark>");
+}
+
+function skeleton(){
+  results.innerHTML="";
+  for(let i=0;i<6;i++){
+    const div=document.createElement("div");
+    div.className="skeleton";
+    results.appendChild(div);
   }
+}
 
-  const DEFAULT_API_BASE = "https://tech-enrollment-designs-supplier.trycloudflare.com";
-  const apiOverride = new URLSearchParams(window.location.search).get("api");
-  const API_BASE = (apiOverride || DEFAULT_API_BASE).replace(/\/$/, "");
-  const API_URL = `${API_BASE}/api/search`;
+function openVideo(id,start){
+  player.src=`https://www.youtube.com/embed/${id}?start=${start}&autoplay=1`;
+  playerWrap.style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 
-  const START_OFFSET_SEC = 3;   // start video a few seconds earlier
-  const CONTEXT_CHARS = 55;     // chars before/after highlight
-  const COUNT = 20;
+function render(list,query){
+  results.innerHTML="";
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+  list.forEach((item,i)=>{
 
-  function buildSnippet(text, query) {
-    const t = String(text || "");
-    const q = String(query || "").trim();
-    if (!q) return escapeHtml(t);
+    const videoId=item.videoId;
+    const start=Math.max(0,item.start-START_OFFSET);
+    const text=cleanText(item.text);
+    const snippet=highlight(text,query);
 
-    const lt = t.toLowerCase();
-    const lq = q.toLowerCase();
-    const pos = lt.indexOf(lq);
+    const card=document.createElement("div");
+    card.className="rs-card";
 
-    if (pos === -1) return escapeHtml(t);
+    card.innerHTML=`
+      <img class="rs-thumb" loading="lazy"
+        src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg">
+      <div class="rs-body">
+        <div class="rs-time">${formatTime(start)}</div>
+        <div class="rs-snippet">${snippet}</div>
+      </div>
+    `;
 
-    const start = Math.max(0, pos - CONTEXT_CHARS);
-    const end = Math.min(t.length, pos + q.length + CONTEXT_CHARS);
+    card.onclick=()=>openVideo(videoId,start);
 
-    let snippet = t.slice(start, end);
+    results.appendChild(card);
 
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
-    snippet = escapeHtml(snippet).replace(re, (m) => `<mark>${m}</mark>`);
-
-    if (start > 0) snippet = "… " + snippet;
-    if (end < t.length) snippet = snippet + " …";
-
-    return snippet;
-  }
-
-  function openEmbed(videoId, startSec) {
-    const s = Math.max(0, Number(startSec) || 0);
-    player.src = `https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1`;
-    playerBox.style.display = "block";
-    playerBox.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function youtubeLink(videoId, startSec) {
-    const s = Math.max(0, Number(startSec) || 0);
-    return `https://www.youtube.com/watch?v=${videoId}&t=${s}s`;
-  }
-
-  function renderResults(list, query) {
-    resultsEl.innerHTML = "";
-    playerBox.style.display = "none";
-    player.src = "";
-
-    if (!Array.isArray(list) || list.length === 0) {
-      resultsEl.innerHTML = `<div class="rs-hint">No results.</div>`;
-      return;
-    }
-
-    for (const item of list) {
-      const videoId = item.videoId;
-      const start = Math.max(0, (Number(item.start) || 0) - START_OFFSET_SEC);
-      const snippet = buildSnippet(item.text, query);
-
-      const row = document.createElement("div");
-      row.className = "rs-item";
-
-      row.innerHTML = `
-        <img class="rs-thumb" src="https://img.youtube.com/vi/${escapeHtml(videoId)}/hqdefault.jpg" alt="">
-        <div class="rs-meta">
-          <p class="rs-title">${escapeHtml(item.title || videoId)}</p>
-          <p class="rs-snippet">${snippet}</p>
-          <div class="rs-actions">
-            <a href="${youtubeLink(videoId, start)}" target="_blank" rel="noreferrer">Open on YouTube</a>
-            <a href="#" data-play="1">Play here</a>
-          </div>
-        </div>
-      `;
-
-      row.querySelector('[data-play="1"]').addEventListener("click", (e) => {
-        e.preventDefault();
-        openEmbed(videoId, start);
-      });
-
-      resultsEl.appendChild(row);
-    }
-  }
-
-  async function doSearch() {
-    const q = input.value.trim();
-    if (!q) return;
-
-    statusEl.textContent = "Searching…";
-    resultsEl.innerHTML = "";
-
-    const url = `${API_URL}?query=${encodeURIComponent(q)}&count=${COUNT}`;
-
-    try {
-      const res = await fetch(url);
-      if (!res.ok) {
-        statusEl.textContent = `API error: ${res.status}`;
-        return;
-      }
-
-      const data = await res.json();
-      statusEl.textContent = `Results: ${data.count || 0}`;
-      renderResults(data.results || [], q);
-    } catch (e) {
-      statusEl.textContent = "Fetch failed (backend/tunnel not reachable).";
-      console.error(e);
-    }
-  }
-
-  btn.addEventListener("click", doSearch);
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") doSearch();
+    setTimeout(()=>card.classList.add("show"), i*40);
   });
+}
 
-  // optional: auto-focus
-  input.focus();
+async function search(){
+  const q=input.value.trim();
+  if(!q)return;
+
+  skeleton();
+
+  const res=await fetch(`${API}?query=${encodeURIComponent(q)}&count=${COUNT}`);
+  const data=await res.json();
+
+  render(data.results||[],q);
+}
+
+btn.onclick=search;
+input.addEventListener("keydown",e=>{
+  if(e.key==="Enter") search();
+});
+
 });
