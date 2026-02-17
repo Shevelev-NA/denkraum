@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const recentEl = document.getElementById("recent");
 
   const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 40;
+  const PAGE_SIZE = 60; // 🔥 увеличено
   const START_OFFSET = 4;
   const DEBOUNCE = 300;
 
@@ -50,14 +50,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 🔥 ВОЗВРАЩАЕМ HIGHLIGHT
+  function highlight(text, word){
+    if(!word) return text;
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
+    return text.replace(regex, `<mark>$1</mark>`);
+  }
+
   function card(item){
     const el=document.createElement("div");
     el.className="card";
+
+    const highlighted = highlight(item.text, currentQuery);
+
     el.innerHTML=`
       <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
       <div class="meta">
         <div class="time">${item.start}s</div>
-        <div class="snippet">${item.text}</div>
+        <div class="snippet">${highlighted}</div>
       </div>
     `;
     el.onclick=()=>openVideo(item.videoId,item.start);
@@ -84,6 +95,13 @@ document.addEventListener("DOMContentLoaded", () => {
     resultsEl.innerHTML="";
 
     await loadNext();
+
+    // 🔥 автоподгрузка если экран пустой
+    setTimeout(()=>{
+      if(document.body.offsetHeight < window.innerHeight){
+        loadNext();
+      }
+    },200);
   }
 
   async function loadNext(){
@@ -109,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.addEventListener("scroll",()=>{
-    if(window.innerHeight+window.scrollY>document.body.offsetHeight-800){
+    if(window.innerHeight+window.scrollY>document.body.offsetHeight-600){
       loadNext();
     }
   });
