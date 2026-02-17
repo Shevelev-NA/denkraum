@@ -15,8 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentQuery="";
   let offset=0;
   let loading=false;
-  let done=false;
-  let loadedVideos=new Set();
+  let total=0;
   let debounceTimer=null;
 
   function stopPlayer(){
@@ -51,33 +50,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* 🔥 НОВОЕ: highlight */
-  function highlight(text, word){
-    if(!word) return text;
-
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
-
-    return text.replace(regex, '<mark>$1</mark>');
-  }
-
   function card(item){
-    if(loadedVideos.has(item.videoId)) return null;
-    loadedVideos.add(item.videoId);
-
     const el=document.createElement("div");
     el.className="card";
-
-    const highlightedText = highlight(item.text, currentQuery);
-
     el.innerHTML=`
       <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
       <div class="meta">
         <div class="time">${item.start}s</div>
-        <div class="snippet">${highlightedText}</div>
+        <div class="snippet">${item.text}</div>
       </div>
     `;
-
     el.onclick=()=>openVideo(item.videoId,item.start);
     return el;
   }
@@ -94,39 +76,40 @@ document.addEventListener("DOMContentLoaded", () => {
     if(!q) return;
 
     stopPlayer();
-
     if(save) saveRecent(q);
 
     currentQuery=q;
     offset=0;
-    done=false;
-    loadedVideos.clear();
+    total=0;
     resultsEl.innerHTML="";
 
     await loadNext();
   }
 
   async function loadNext(){
-    if(loading||done) return;
+    if(loading) return;
+    if(total && offset >= total) return;
+
     loading=true;
 
     const data=await fetchPage();
     const list=data.results||[];
 
+    total=data.totalCount || 0;
+
     list.forEach(item=>{
-      const el=card(item);
-      if(el) resultsEl.appendChild(el);
+      resultsEl.appendChild(card(item));
     });
 
     offset+=list.length;
-    if(list.length<PAGE_SIZE) done=true;
 
-    statusEl.textContent=`Results: ${data.totalCount} • shown: ${offset}`;
+    statusEl.textContent=`Results: ${total} • shown: ${offset}`;
+
     loading=false;
   }
 
   window.addEventListener("scroll",()=>{
-    if(window.innerHeight+window.scrollY>document.body.offsetHeight-600){
+    if(window.innerHeight+window.scrollY>document.body.offsetHeight-800){
       loadNext();
     }
   });
