@@ -6,39 +6,21 @@
 <title>Denkraum — Real Speech</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="./style.css" />
 
 <style>
-:root{
-  --header-h: 64px;
-}
-
 body{ margin:0; font-family:Inter, sans-serif; }
 
-/* Sticky ТОЛЬКО на этой странице */
-.page .header{
-  position: sticky;
-  top: 0;
-  z-index: 3000;
-  background:#ffffff;
-}
-
-/* Поиск и плеер тоже липнут */
 .rs-top{
-  position: sticky;
-  top: var(--header-h);
-  z-index: 2000;
+  position:sticky;
+  top:0;
+  z-index:1000;
   background:#f8f9ff;
   padding:30px 40px;
   border-bottom:1px solid #e5e7eb;
-}
-
-.header-inner{
-  height: var(--header-h);
-  display:flex;
-  align-items:center;
 }
 
 .rs-title{ font-size:28px; font-weight:700; margin-bottom:10px; }
@@ -61,6 +43,24 @@ body{ margin:0; font-family:Inter, sans-serif; }
   align-items:center;
 }
 
+.chip{
+  padding:6px 12px;
+  background:#e5e7eb;
+  border-radius:999px;
+  font-size:13px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.chip:hover{ background:#d1d5db; }
+
+.clear-btn{
+  font-size:12px;
+  color:#ef4444;
+  cursor:pointer;
+  margin-left:10px;
+}
+
 #playerWrap{ margin-top:20px; display:none; }
 #playerWrap iframe{
   width:100%;
@@ -76,6 +76,64 @@ body{ margin:0; font-family:Inter, sans-serif; }
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
   gap:24px;
+}
+
+.card{
+  background:#fff;
+  border-radius:18px;
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  transition:.25s;
+  opacity:0;
+  transform:translateY(10px);
+  animation:fadeIn .35s ease forwards;
+}
+
+.card:hover{ transform:translateY(-6px); }
+
+@keyframes fadeIn{
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.thumb{ width:100%; aspect-ratio:16/9; object-fit:cover; }
+
+.meta{ padding:12px 14px; }
+
+.snippet{ font-size:14px; line-height:1.5; }
+
+mark{
+  background:#fde047;
+  padding:2px 4px;
+  border-radius:4px;
+  font-weight:600;
+}
+
+.thumbwrap{ position:relative; }
+
+.time-badge{
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  background:rgba(0,0,0,0.85);
+  color:#fff;
+  font-size:12px;
+  padding:4px 6px;
+  border-radius:4px;
+  font-weight:700;
+}
+
+.scroll-top{
+  position:fixed;
+  right:25px;
+  bottom:25px;
+  background:#111827;
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  display:none;
 }
 </style>
 </head>
@@ -99,7 +157,9 @@ body{ margin:0; font-family:Inter, sans-serif; }
 
   <input id="searchInput" placeholder="Type a word and press Enter…" />
 
-  <div id="recent"></div>
+  <div id="recent">
+    <div id="clearHistory" class="clear-btn">clear</div>
+  </div>
 
   <div id="playerWrap">
     <iframe id="player" allow="autoplay"></iframe>
@@ -108,6 +168,10 @@ body{ margin:0; font-family:Inter, sans-serif; }
 
 <div id="status"></div>
 <div id="results" class="rs-grid"></div>
+
+<button class="scroll-top" id="scrollTopBtn">↑</button>
+
+</div>
 
 <script src="./pronunciation.js"></script>
 </body>
