@@ -19,8 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let total = 0;
   let debounceTimer = null;
 
-  /* ---------------- PLAYER ---------------- */
-
   function stopPlayer() {
     player.src = "";
     playerWrap.style.display = "none";
@@ -30,10 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const s = Math.max(0, sec - START_OFFSET);
     player.src = `https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
     playerWrap.style.display = "block";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // ❌ убрали прыжок вверх
   }
-
-  /* ---------------- HELPERS ---------------- */
 
   function highlight(text, word) {
     if (!word) return text;
@@ -48,8 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const s = sec % 60;
     return `${m}:${String(s).padStart(2, "0")}`;
   }
-
-  /* ---------------- HISTORY ---------------- */
 
   function saveRecent(word) {
     let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
@@ -78,8 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  /* ---------------- CARD ---------------- */
-
   function card(item) {
     const el = document.createElement("div");
     el.className = "card";
@@ -98,8 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
     el.onclick = () => openVideo(item.videoId, item.start);
     return el;
   }
-
-  /* ---------------- API ---------------- */
 
   async function fetchPage() {
     const res = await fetch(
@@ -135,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = data.results || [];
     total = data.totalCount || 0;
 
-    // offset по unique videoId
     uniqueOffset += list.length;
 
     list.forEach((item) => {
@@ -146,28 +135,18 @@ document.addEventListener("DOMContentLoaded", () => {
     loading = false;
   }
 
-  /* ---------------- INTERSECTION OBSERVER ---------------- */
-
   const sentinel = document.createElement("div");
   sentinel.style.height = "1px";
   resultsEl.after(sentinel);
 
   const observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting) {
-        loadNext();
-      }
+      if (entries[0].isIntersecting) loadNext();
     },
-    {
-      root: null,
-      rootMargin: "600px",
-      threshold: 0,
-    }
+    { root: null, rootMargin: "600px", threshold: 0 }
   );
 
   observer.observe(sentinel);
-
-  /* ---------------- SCROLL TOP ---------------- */
 
   window.addEventListener("scroll", () => {
     scrollBtn.style.display = window.scrollY > 400 ? "block" : "none";
@@ -177,14 +156,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  /* ---------------- INPUT ---------------- */
-
   input.addEventListener("input", () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      if (input.value.trim().length >= 2) {
-        startSearch(input.value, false);
-      }
+      if (input.value.trim().length >= 2) startSearch(input.value, false);
     }, DEBOUNCE);
   });
 
