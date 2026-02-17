@@ -8,13 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const scrollBtn = document.getElementById("scrollTopBtn");
 
   const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 30; // 20–40 по желанию
+  const PAGE_SIZE = 30;
   const START_OFFSET = 4;
   const DEBOUNCE = 300;
   const MAX_HISTORY = 10;
 
   let currentQuery = "";
-  let uniqueOffset = 0; // offset уже по уникальным videoId
+  let uniqueOffset = 0;
   let loading = false;
   let total = 0;
   let debounceTimer = null;
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const s = Math.max(0, sec - START_OFFSET);
     player.src = `https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
     playerWrap.style.display = "block";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // УБРАН scrollTo — больше не прыгает вверх
   }
 
   /* ---------------- HELPERS ---------------- */
@@ -103,9 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function fetchPage() {
     const res = await fetch(
-      `${API}?query=${encodeURIComponent(
-        currentQuery
-      )}&count=${PAGE_SIZE}&offset=${uniqueOffset}`
+      `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${uniqueOffset}`
     );
     return await res.json();
   }
@@ -135,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = data.results || [];
     total = data.totalCount || 0;
 
-    // offset по unique videoId
     uniqueOffset += list.length;
 
     list.forEach((item) => {
@@ -158,11 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loadNext();
       }
     },
-    {
-      root: null,
-      rootMargin: "600px",
-      threshold: 0,
-    }
+    { root: null, rootMargin: "600px", threshold: 0 }
   );
 
   observer.observe(sentinel);
