@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let rawOffset = 0;
   let loading = false;
   let total = 0;
+  let hasMore = true;
   let debounceTimer = null;
 
   const shownVideoIds = new Set();
@@ -124,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentQuery=qq;
     rawOffset=0;
     total=0;
+    hasMore=true;
     shownVideoIds.clear();
     resultsEl.innerHTML="";
 
@@ -131,20 +133,35 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadNext(){
-    if(loading) return;
-    if(total !== 0 && rawOffset >= total) return;
+    if(loading || !hasMore) return;
 
     loading=true;
 
     const data=await fetchPage();
     const list=data.results||[];
     total=data.totalCount||0;
+
+    if(list.length === 0){
+      hasMore = false;
+      loading=false;
+      return;
+    }
+
     rawOffset+=list.length;
+
+    let added=0;
 
     list.forEach(item=>{
       const el=card(item);
-      if(el) resultsEl.appendChild(el);
+      if(el){
+        resultsEl.appendChild(el);
+        added++;
+      }
     });
+
+    if(rawOffset >= total){
+      hasMore = false;
+    }
 
     statusEl.textContent=`Results: ${total}`;
     loading=false;
@@ -162,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   },{
     root:null,
-    rootMargin:"600px",
+    rootMargin:"400px",
     threshold:0
   });
 
