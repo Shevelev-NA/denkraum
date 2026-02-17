@@ -7,14 +7,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const recentEl = document.getElementById("recent");
 
   const API_URL = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 60;
-  const START_OFFSET_SEC = 3;
+
+  const PAGE_SIZE = 40;            // ✅ 40
+  const START_OFFSET_SEC = 4;      // ✅ -4 секунды
+  const DEBOUNCE_MS = 300;         // ✅ 300ms
 
   let currentQuery = "";
   let offset = 0;
   let loading = false;
   let done = false;
   let loadedVideos = new Set();
+  let debounceTimer = null;
 
   function formatTime(sec) {
     const m = Math.floor(sec / 60);
@@ -49,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const chip=document.createElement("div");
       chip.className="chip";
       chip.textContent=word;
-      chip.onclick=()=>startSearch(word);
+      chip.onclick=()=>startSearch(word,true);
       recentEl.appendChild(chip);
     });
   }
@@ -59,29 +62,47 @@ document.addEventListener("DOMContentLoaded", () => {
     loadedVideos.add(item.videoId);
 
     const start=Math.max(0,item.start-START_OFFSET_SEC);
+
     const card=document.createElement("div");
-    card.className="card";
+    card.className="card fade-in";
+
     card.innerHTML=`
-      <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+      <img class="thumb" 
+           loading="lazy"
+           src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
       <div class="meta">
         <div class="time">${formatTime(start)}</div>
         <div class="snippet">${item.text}</div>
       </div>`;
+
+    // 🔥 hover preview
+    const img = card.querySelector(".thumb");
+    card.addEventListener("mouseenter",()=>{
+      img.src=`https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`;
+    });
+    card.addEventListener("mouseleave",()=>{
+      img.src=`https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg`;
+    });
+
     card.onclick=()=>openEmbed(item.videoId,start);
+
     return card;
   }
 
   async function fetchPage(q,pageOffset){
-    const res=await fetch(`${API_URL}?query=${encodeURIComponent(q)}&count=${PAGE_SIZE}&offset=${pageOffset}`);
+    const res=await fetch(
+      `${API_URL}?query=${encodeURIComponent(q)}&count=${PAGE_SIZE}&offset=${pageOffset}`
+    );
     return await res.json();
   }
 
-  async function startSearch(q){
+  async function startSearch(q,fromUser=false){
     q=q.trim();
     if(!q) return;
 
-    stopPlayer();                // 🔥 остановка старого видео
-    saveRecent(q);
+    stopPlayer();
+
+    if(fromUser) saveRecent(q);
 
     currentQuery=q;
     offset=0;
@@ -117,8 +138,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // 🔥 debounce
+  input.addEventListener("input",()=>{
+    clearTimeout(debounceTimer);
+    debounceTimer=setTimeout(()=>{
+      if(input.value.trim().length>=2){
+        startSearch(input.value,true);
+      }
+    },DEBOUNCE_MS);
+  });
+
   input.addEventListener("keydown",e=>{
-    if(e.key==="Enter") startSearch(input.value);
+    if(e.key==="Enter"){
+      clearTimeout(debounceTimer);
+      startSearch(input.value,true);
+    }
   });
 
   renderRecent();
