@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const recentEl = document.getElementById("recent");
 
   const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 60; // 🔥 увеличено
+  const PAGE_SIZE = 60;
   const START_OFFSET = 4;
   const DEBOUNCE = 300;
 
@@ -29,33 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
     playerWrap.style.display="block";
   }
 
-  function saveRecent(word){
-    let arr=JSON.parse(localStorage.getItem("recentWords")||"[]");
-    arr=arr.filter(x=>x!==word);
-    arr.unshift(word);
-    arr=arr.slice(0,10);
-    localStorage.setItem("recentWords",JSON.stringify(arr));
-    renderRecent();
-  }
-
-  function renderRecent(){
-    recentEl.innerHTML="";
-    const arr=JSON.parse(localStorage.getItem("recentWords")||"[]");
-    arr.forEach(w=>{
-      const chip=document.createElement("div");
-      chip.className="chip";
-      chip.textContent=w;
-      chip.onclick=()=>startSearch(w,true);
-      recentEl.appendChild(chip);
-    });
-  }
-
-  // 🔥 ВОЗВРАЩАЕМ HIGHLIGHT
   function highlight(text, word){
     if(!word) return text;
     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
-    return text.replace(regex, `<mark>$1</mark>`);
+    return text.replace(regex, '<mark>$1</mark>');
   }
 
   function card(item){
@@ -82,12 +60,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return await res.json();
   }
 
-  async function startSearch(q,save=false){
+  async function startSearch(q){
     q=q.trim();
     if(!q) return;
 
     stopPlayer();
-    if(save) saveRecent(q);
 
     currentQuery=q;
     offset=0;
@@ -96,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     await loadNext();
 
-    // 🔥 автоподгрузка если экран пустой
+    // автодогрузка если экран пустой
     setTimeout(()=>{
       if(document.body.offsetHeight < window.innerHeight){
         loadNext();
@@ -136,17 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(debounceTimer);
     debounceTimer=setTimeout(()=>{
       if(input.value.trim().length>=2){
-        startSearch(input.value,false);
+        startSearch(input.value);
       }
     },DEBOUNCE);
   });
 
-  input.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){
-      clearTimeout(debounceTimer);
-      startSearch(input.value,true);
-    }
-  });
-
-  renderRecent();
 });
