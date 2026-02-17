@@ -14,54 +14,53 @@
   --muted:#64748b;
   --panel:#ffffff;
   --border:#e2e8f0;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
 
-body{
-  background:var(--bg);
-  color:var(--text);
-}
+body{ background:var(--bg); color:var(--text); }
+.main{ max-width:100%; margin:0; }
+.rs-wrap{ width:100%; padding:20px 40px 60px; }
 
-.main{
-  max-width:100%;
-  margin:0;
-}
-
-.rs-wrap{
-  width:100%;
-  padding:20px 40px 60px;
-}
-
-/* 🔥 FIXED TOP PANEL */
 .rs-top{
   position:sticky;
   top:0;
   z-index:1000;
-  background:var(--bg);
-  padding-bottom:12px;
+  background:rgba(246,248,255,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding:14px 0 12px;
+  border-bottom: 1px solid rgba(226,232,240,0.9);
 }
 
 .rs-search-text{
   font-size:14px;
   color:var(--muted);
-  margin-bottom:6px;
+  margin-bottom:8px;
 }
 
-.rs-search{
+.rs-row{
   display:flex;
   gap:12px;
   align-items:center;
+  flex-wrap:wrap;
 }
 
-.rs-search input{
+.rs-row input{
   padding:10px 14px;
   font-size:15px;
   border:1px solid var(--border);
-  border-radius:10px;
-  width:320px;
+  border-radius:12px;
+  width:340px;
 }
 
-.rs-search input::placeholder{
-  color:var(--muted);
+.rs-row input::placeholder{ color:var(--muted); opacity:1; }
+
+.select{
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--panel);
+  font-size:14px;
 }
 
 .rs-recent{
@@ -79,7 +78,6 @@ body{
   cursor:pointer;
 }
 
-/* PLAYER */
 .rs-player-wrap{
   margin-top:14px;
   display:none;
@@ -88,62 +86,103 @@ body{
 .rs-player-wrap iframe{
   width:100%;
   height:380px;
-  border-radius:16px;
+  border-radius:18px;
   border:none;
+  box-shadow: var(--shadow);
 }
 
 /* GRID */
+#status{ margin-top:16px; color: var(--muted); font-size:14px; }
+
 .rs-grid{
   display:grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap:20px;
-  margin-top:20px;
+  margin-top:18px;
 }
 
 .card{
   background:var(--panel);
-  border-radius:16px;
+  border:1px solid var(--border);
+  border-radius:18px;
   overflow:hidden;
   cursor:pointer;
-  border:1px solid var(--border);
-  transition:transform .2s ease, box-shadow .2s ease;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  opacity:0;
+  transform: translateY(10px);
+  animation: fadeIn .38s ease forwards;
+}
+
+@keyframes fadeIn{
+  to{ opacity:1; transform: translateY(0); }
 }
 
 .card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 10px 25px rgba(0,0,0,0.12);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(15,23,42,0.14);
+  border-color: rgba(59,130,246,0.35);
 }
 
+.thumb-wrap{ position:relative; }
 .thumb{
   width:100%;
   aspect-ratio:16/9;
   object-fit:cover;
+  display:block;
 }
 
-.meta{
+.thumb-overlay{
+  position:absolute;
+  inset:0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0.0) 55%);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
   padding:10px;
+  pointer-events:none;
 }
 
-.time{
+.badge-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.badge{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.92);
+  color:#0f172a;
+}
+
+.time-pill{
+  align-self:flex-start;
   font-size:12px;
-  color:var(--muted);
-  font-weight:600;
+  padding:4px 10px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.92);
+  color:#0f172a;
+  font-weight:700;
 }
 
+.meta{ padding:10px 12px 14px; }
 .snippet{
   font-size:14px;
-  line-height:1.5;
+  line-height:1.55;
   display:-webkit-box;
   -webkit-line-clamp:4;
   -webkit-box-orient:vertical;
   overflow:hidden;
+  color:#0f172a;
+}
+
+mark{
+  background:#ffe58f;
+  padding:2px 4px;
+  border-radius:6px;
 }
 </style>
 </head>
 
 <body>
 <div class="page">
-
 <header class="header">
   <div class="header-inner">
     <a class="logo" href="./index.html">Denkraum</a>
@@ -156,19 +195,20 @@ body{
 
 <main class="main">
   <div class="rs-wrap">
-
     <h1>Real Speech</h1>
 
     <div class="rs-top">
-
       <div class="rs-search-text">
         Search subtitles and play YouTube a few seconds before the match.
       </div>
 
-      <div class="rs-search">
-        <input id="searchInput"
-               placeholder="Type a word (e.g. fahren) and press Enter…" />
-        <button id="themeToggle">Dark</button>
+      <div class="rs-row">
+        <input id="searchInput" placeholder="Type a word (e.g. fahren) and press Enter…" />
+        <select id="typeFilter" class="select">
+          <option value="">All</option>
+          <option value="news">News</option>
+          <option value="learning">Learning</option>
+        </select>
       </div>
 
       <div id="recent" class="rs-recent"></div>
@@ -176,15 +216,12 @@ body{
       <div id="playerWrap" class="rs-player-wrap">
         <iframe id="player" allow="autoplay"></iframe>
       </div>
-
     </div>
 
     <div id="status"></div>
     <div id="results" class="rs-grid"></div>
-
   </div>
 </main>
-
 </div>
 
 <script src="./pronunciation.js"></script>
