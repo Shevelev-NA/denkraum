@@ -15,6 +15,7 @@
 
 body{
   margin:0;
+  font-family:Inter, sans-serif;
 }
 
 /* фиксируем блок поиска + плеера */
@@ -61,8 +62,14 @@ body{
   border-radius:999px;
   font-size:13px;
   cursor:pointer;
+  transition:.2s;
 }
 
+.chip:hover{
+  background:#d1d5db;
+}
+
+/* PLAYER */
 #playerWrap{
   margin-top:20px;
   display:none;
@@ -75,12 +82,14 @@ body{
   border:none;
 }
 
+/* STATUS */
 #status{
   padding:20px 40px 0;
   font-size:14px;
   color:#64748b;
 }
 
+/* GRID */
 .rs-grid{
   padding:20px 40px 60px;
   display:grid;
@@ -88,6 +97,7 @@ body{
   gap:24px;
 }
 
+/* CARD */
 .card{
   background:#fff;
   border-radius:18px;
@@ -132,6 +142,14 @@ body{
   line-height:1.5;
 }
 
+/* 🔥 ВАЖНО — highlight */
+mark{
+  background:#fde047;
+  padding:2px 4px;
+  border-radius:4px;
+  font-weight:600;
+}
+
 </style>
 </head>
 
@@ -139,7 +157,6 @@ body{
 
 <div class="page">
 
-<!-- HEADER ИЗ index.html -->
 <header class="header">
   <div class="header-inner">
     <a class="logo" href="./index.html">Denkraum</a>
