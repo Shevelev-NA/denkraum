@@ -1,178 +1,164 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Denkraum — Real Speech</title>
+document.addEventListener("DOMContentLoaded", () => {
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  const input = document.getElementById("searchInput");
+  const resultsEl = document.getElementById("results");
+  const statusEl = document.getElementById("status");
+  const playerWrap = document.getElementById("playerWrap");
+  const player = document.getElementById("player");
+  const recentEl = document.getElementById("recent");
+  const clearBtn = document.getElementById("clearHistory");
+  const scrollBtn = document.getElementById("scrollTopBtn");
 
-<link rel="stylesheet" href="./style.css" />
+  const API = "http://localhost:3001/api/search";
+  const PAGE_SIZE = 60;
+  const START_OFFSET = 4;
+  const DEBOUNCE = 300;
+  const MAX_HISTORY = 10;
 
-<style>
-body{ margin:0; font-family:Inter, sans-serif; }
+  let currentQuery = "";
+  let rawOffset = 0;
+  let loading = false;
+  let total = 0;
+  let debounceTimer = null;
 
-.rs-top{
-  position:sticky;
-  top:0;
-  z-index:1000;
-  background:#f8f9ff;
-  padding:30px 40px;
-  border-bottom:1px solid #e5e7eb;
-}
+  const shownVideoIds = new Set();
 
-.rs-title{ font-size:28px; font-weight:700; margin-bottom:10px; }
-.rs-sub{ font-size:14px; color:#64748b; margin-bottom:15px; }
+  function stopPlayer(){
+    player.src = "";
+    playerWrap.style.display = "none";
+  }
 
-#searchInput{
-  width:340px;
-  padding:12px 16px;
-  font-size:16px;
-  border-radius:14px;
-  border:1px solid #e5e7eb;
-  outline:none;
-}
+  function openVideo(id, sec){
+    const s = Math.max(0, sec - START_OFFSET);
+    player.src = `https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
+    playerWrap.style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
 
-#recent{
-  margin-top:12px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-}
+  function highlight(text, word){
+    if(!word) return text;
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(${escaped})`, "gi");
+    return text.replace(re, "<mark>$1</mark>");
+  }
 
-.chip{
-  padding:6px 12px;
-  background:#e5e7eb;
-  border-radius:999px;
-  font-size:13px;
-  cursor:pointer;
-  transition:.2s;
-}
+  function formatTime(sec){
+    sec = Number(sec)||0;
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return `${m}:${String(s).padStart(2,"0")}`;
+  }
 
-.chip:hover{ background:#d1d5db; }
+  function saveRecent(word){
+    let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr = arr.filter(x => x !== word);
+    arr.unshift(word);
+    arr = arr.slice(0, MAX_HISTORY);
+    localStorage.setItem("recentWords", JSON.stringify(arr));
+    renderRecent();
+  }
 
-.clear-btn{
-  font-size:12px;
-  color:#ef4444;
-  cursor:pointer;
-  margin-left:10px;
-}
+  function renderRecent(){
+    const arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    recentEl.innerHTML = '<div id="clearHistory" class="clear-btn">clear</div>';
+    arr.forEach(w=>{
+      const chip=document.createElement("div");
+      chip.className="chip";
+      chip.textContent=w;
+      chip.onclick=()=>startSearch(w,true);
+      recentEl.appendChild(chip);
+    });
+    document.getElementById("clearHistory").onclick=()=>{
+      localStorage.removeItem("recentWords");
+      renderRecent();
+    };
+  }
 
-#playerWrap{ margin-top:20px; display:none; }
-#playerWrap iframe{
-  width:100%;
-  height:380px;
-  border-radius:18px;
-  border:none;
-}
+  function card(item){
+    if(shownVideoIds.has(item.videoId)) return null;
+    shownVideoIds.add(item.videoId);
 
-#status{ padding:20px 40px 0; font-size:14px; color:#64748b; }
+    const el=document.createElement("div");
+    el.className="card";
 
-.rs-grid{
-  padding:20px 40px 60px;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:24px;
-}
+    el.innerHTML=`
+      <div class="thumbwrap">
+        <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+        <div class="time-badge">${formatTime(item.start)}</div>
+      </div>
+      <div class="meta">
+        <div class="snippet">${highlight(item.text,currentQuery)}</div>
+      </div>
+    `;
 
-.card{
-  background:#fff;
-  border-radius:18px;
-  overflow:hidden;
-  cursor:pointer;
-  box-shadow:0 8px 24px rgba(0,0,0,0.08);
-  transition:.25s;
-  opacity:0;
-  transform:translateY(10px);
-  animation:fadeIn .35s ease forwards;
-}
+    el.onclick=()=>openVideo(item.videoId,item.start);
+    return el;
+  }
 
-.card:hover{ transform:translateY(-6px); }
+  async function fetchPage(){
+    const res=await fetch(`${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${rawOffset}`);
+    return await res.json();
+  }
 
-@keyframes fadeIn{
-  to{ opacity:1; transform:translateY(0); }
-}
+  async function startSearch(q,save=false){
+    const qq=q.trim();
+    if(!qq) return;
 
-.thumb{ width:100%; aspect-ratio:16/9; object-fit:cover; }
+    stopPlayer();
+    if(save) saveRecent(qq);
 
-.meta{ padding:12px 14px; }
+    currentQuery=qq;
+    rawOffset=0;
+    shownVideoIds.clear();
+    resultsEl.innerHTML="";
 
-.snippet{ font-size:14px; line-height:1.5; }
+    await loadNext();
+  }
 
-mark{
-  background:#fde047;
-  padding:2px 4px;
-  border-radius:4px;
-  font-weight:600;
-}
+  async function loadNext(){
+    if(loading) return;
+    loading=true;
 
-.thumbwrap{ position:relative; }
+    const data=await fetchPage();
+    const list=data.results||[];
+    total=data.totalCount||0;
+    rawOffset+=list.length;
 
-.time-badge{
-  position:absolute;
-  right:8px;
-  bottom:8px;
-  background:rgba(0,0,0,0.85);
-  color:#fff;
-  font-size:12px;
-  padding:4px 6px;
-  border-radius:4px;
-  font-weight:700;
-}
+    list.forEach(item=>{
+      const el=card(item);
+      if(el) resultsEl.appendChild(el);
+    });
 
-.scroll-top{
-  position:fixed;
-  right:25px;
-  bottom:25px;
-  background:#111827;
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:999px;
-  cursor:pointer;
-  display:none;
-}
-</style>
-</head>
+    statusEl.textContent=`Results: ${total}`;
+    loading=false;
+  }
 
-<body>
-<div class="page">
+  window.addEventListener("scroll",()=>{
+    if(window.innerHeight+window.scrollY>document.body.offsetHeight-600){
+      loadNext();
+    }
+    scrollBtn.style.display = window.scrollY > 400 ? "block" : "none";
+  });
 
-<header class="header">
-  <div class="header-inner">
-    <a class="logo" href="./index.html">Denkraum</a>
-    <nav class="nav">
-      <a href="./index.html">Tools</a>
-      <a href="./about.html">About</a>
-    </nav>
-  </div>
-</header>
+  scrollBtn.onclick=()=>{
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
 
-<div class="rs-top">
-  <div class="rs-title">Real Speech</div>
-  <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
+  input.addEventListener("input",()=>{
+    clearTimeout(debounceTimer);
+    debounceTimer=setTimeout(()=>{
+      if(input.value.trim().length>=2){
+        startSearch(input.value,false);
+      }
+    },DEBOUNCE);
+  });
 
-  <input id="searchInput" placeholder="Type a word and press Enter…" />
+  input.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"){
+      clearTimeout(debounceTimer);
+      startSearch(input.value,true);
+    }
+  });
 
-  <div id="recent">
-    <div id="clearHistory" class="clear-btn">clear</div>
-  </div>
-
-  <div id="playerWrap">
-    <iframe id="player" allow="autoplay"></iframe>
-  </div>
-</div>
-
-<div id="status"></div>
-<div id="results" class="rs-grid"></div>
-
-<button class="scroll-top" id="scrollTopBtn">↑</button>
-
-</div>
-
-<script src="./pronunciation.js"></script>
-</body>
-</html>
+  renderRecent();
+});
