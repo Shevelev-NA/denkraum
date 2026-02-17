@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let loading = false;
   let total = 0;
   let debounceTimer = null;
-  let scrollLock = false;
 
   const shownVideoIds = new Set();
 
@@ -37,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({top:0, behavior:"smooth"});
   }
 
-  /* ---------------- UI HELPERS ---------------- */
+  /* ---------------- HELPERS ---------------- */
 
   function highlight(text, word){
     if(!word) return text;
@@ -93,7 +92,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     el.innerHTML=`
       <div class="thumbwrap">
-        <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+        <img class="thumb" loading="lazy"
+             src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="time-badge">${formatTime(item.start)}</div>
       </div>
       <div class="meta">
@@ -108,40 +108,38 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ---------------- API ---------------- */
 
   async function fetchPage(){
-    const res = await fetch(
+    const res=await fetch(
       `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${rawOffset}`
     );
     return await res.json();
   }
 
-  async function startSearch(q, save=false){
+  async function startSearch(q,save=false){
     const qq=q.trim();
     if(!qq) return;
 
     stopPlayer();
-
     if(save) saveRecent(qq);
 
     currentQuery=qq;
     rawOffset=0;
+    total=0;
     shownVideoIds.clear();
     resultsEl.innerHTML="";
-    total=0;
 
     await loadNext();
   }
 
   async function loadNext(){
     if(loading) return;
-    if(rawOffset >= total && total !== 0) return;
+    if(total !== 0 && rawOffset >= total) return;
 
     loading=true;
 
-    const data = await fetchPage();
-    const list = data.results || [];
-    total = data.totalCount || 0;
-
-    rawOffset += list.length;
+    const data=await fetchPage();
+    const list=data.results||[];
+    total=data.totalCount||0;
+    rawOffset+=list.length;
 
     list.forEach(item=>{
       const el=card(item);
@@ -149,34 +147,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     statusEl.textContent=`Results: ${total}`;
-
     loading=false;
   }
 
-  /* ---------------- SCROLL FIX ---------------- */
+  /* ---------------- INTERSECTION OBSERVER ---------------- */
+
+  const sentinel = document.createElement("div");
+  sentinel.style.height = "1px";
+  resultsEl.after(sentinel);
+
+  const observer = new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){
+      loadNext();
+    }
+  },{
+    root:null,
+    rootMargin:"600px",
+    threshold:0
+  });
+
+  observer.observe(sentinel);
+
+  /* ---------------- SCROLL TOP ---------------- */
 
   window.addEventListener("scroll",()=>{
-
-    scrollBtn.style.display = window.scrollY > 400 ? "block" : "none";
-
-    if(scrollLock) return;
-    if(loading) return;
-    if(rawOffset >= total && total !== 0) return;
-
-    const nearBottom =
-      window.innerHeight + window.scrollY >=
-      document.body.offsetHeight - 500;
-
-    if(!nearBottom) return;
-
-    scrollLock = true;
-
-    loadNext().finally(()=>{
-      setTimeout(()=>{
-        scrollLock = false;
-      }, 400);
-    });
-
+    scrollBtn.style.display =
+      window.scrollY > 400 ? "block" : "none";
   });
 
   scrollBtn.onclick=()=>{
