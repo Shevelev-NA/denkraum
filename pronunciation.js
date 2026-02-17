@@ -6,10 +6,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const playerWrap = document.getElementById("playerWrap");
   const player = document.getElementById("player");
   const loadMoreEl = document.getElementById("loadMore");
-  const themeToggle = document.getElementById("themeToggle");
+  const recentEl = document.getElementById("recent");
 
-  const API_BASE = "http://localhost:3001";
-  const API_URL = `${API_BASE}/api/search`;
+  const API_URL = "http://localhost:3001/api/search";
 
   const PAGE_SIZE = 60;
   const START_OFFSET_SEC = 3;
@@ -20,110 +19,97 @@ document.addEventListener("DOMContentLoaded", () => {
   let done = false;
 
   function formatTime(sec) {
-    sec = Math.max(0, Number(sec) || 0);
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
   }
 
-  function openEmbed(videoId, startSec) {
-    const s = Math.max(0, Number(startSec) || 0);
-    player.src =
-      `https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1&rel=0&modestbranding=1`;
-    playerWrap.style.display = "block";
-    // scroll удалён — больше не кидает вверх
+  function saveRecent(q){
+    let arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr = arr.filter(x => x !== q);
+    arr.unshift(q);
+    arr = arr.slice(0,10);
+    localStorage.setItem("recentWords", JSON.stringify(arr));
+    renderRecent();
   }
 
-  function cardElement(item) {
-    const start = Math.max(0, item.start - START_OFFSET_SEC);
+  function renderRecent(){
+    recentEl.innerHTML="";
+    const arr = JSON.parse(localStorage.getItem("recentWords") || "[]");
+    arr.forEach(word=>{
+      const chip = document.createElement("div");
+      chip.className="chip";
+      chip.textContent=word;
+      chip.onclick=()=>{
+        input.value=word;
+        startSearch(word);
+      };
+      recentEl.appendChild(chip);
+    });
+  }
 
-    const card = document.createElement("div");
-    card.className = "card";
+  function openEmbed(videoId,startSec){
+    const s = Math.max(0,startSec);
+    player.src=`https://www.youtube.com/embed/${videoId}?start=${s}&autoplay=1`;
+    playerWrap.style.display="block";
+  }
 
-    card.innerHTML = `
-      <img class="thumb"
-           src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+  function cardElement(item){
+    const start = Math.max(0,item.start-START_OFFSET_SEC);
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
       <div class="meta">
-        <div class="topline">
-          <div class="time">${formatTime(start)}</div>
-        </div>
-        <p class="snippet">${item.text}</p>
-      </div>
-    `;
-
-    card.onclick = () => openEmbed(item.videoId, start);
+        <div class="time">${formatTime(start)}</div>
+        <div class="snippet">${item.text}</div>
+      </div>`;
+    card.onclick=()=>openEmbed(item.videoId,start);
     return card;
   }
 
-  async function fetchPage(q, pageOffset) {
-    const url =
-      `${API_URL}?query=${encodeURIComponent(q)}&count=${PAGE_SIZE}&offset=${pageOffset}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error();
+  async function fetchPage(q,pageOffset){
+    const url=`${API_URL}?query=${encodeURIComponent(q)}&count=${PAGE_SIZE}&offset=${pageOffset}`;
+    const res=await fetch(url);
     return await res.json();
   }
 
-  async function startSearch(q) {
-    q = q.trim();
-    if (!q) return;
-
-    currentQuery = q;
-    offset = 0;
-    done = false;
-
-    resultsEl.innerHTML = "";
-    playerWrap.style.display = "none";
-    player.src = "";
-
-    await loadNext(true);
+  async function startSearch(q){
+    q=q.trim();
+    if(!q) return;
+    saveRecent(q);
+    currentQuery=q;
+    offset=0;
+    done=false;
+    resultsEl.innerHTML="";
+    playerWrap.style.display="none";
+    await loadNext();
   }
 
-  async function loadNext(first = false) {
-    if (loading || done || !currentQuery) return;
-    loading = true;
-    loadMoreEl.style.display = "flex";
+  async function loadNext(){
+    if(loading||done) return;
+    loading=true;
+    loadMoreEl.style.display="flex";
+    const data=await fetchPage(currentQuery,offset);
+    const list=data.results||[];
+    list.forEach(item=>resultsEl.appendChild(cardElement(item)));
+    offset+=list.length;
+    if(list.length<PAGE_SIZE) done=true;
+    statusEl.textContent=`Results: ${data.totalCount} • shown: ${offset}${done?" • end":""}`;
+    loadMoreEl.style.display="none";
+    loading=false;
+  }
 
-    try {
-      const data = await fetchPage(currentQuery, offset);
-      const list = data.results || [];
-
-      for (const item of list) {
-        resultsEl.appendChild(cardElement(item));
-      }
-
-      offset += list.length;
-
-      if (list.length < PAGE_SIZE) done = true;
-
-      statusEl.textContent =
-        `Results: ${data.totalCount} • shown: ${offset}${done ? " • end" : ""}`;
-
-    } catch {
-      statusEl.textContent = "Backend error";
-    } finally {
-      loadMoreEl.style.display = "none";
-      loading = false;
+  window.addEventListener("scroll",()=>{
+    if(window.innerHeight+window.scrollY>document.body.offsetHeight-600){
+      loadNext();
     }
-  }
-
-  window.addEventListener("scroll", () => {
-    const nearBottom =
-      window.innerHeight + window.scrollY >
-      document.body.offsetHeight - 600;
-
-    if (nearBottom) loadNext();
   });
 
-  btn.addEventListener("click", () => startSearch(input.value));
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter") startSearch(input.value);
+  btn.addEventListener("click",()=>startSearch(input.value));
+  input.addEventListener("keydown",e=>{
+    if(e.key==="Enter") startSearch(input.value);
   });
 
-  themeToggle.addEventListener("click", () => {
-    const t =
-      document.documentElement.getAttribute("data-theme") === "dark"
-        ? "light"
-        : "dark";
-    document.documentElement.setAttribute("data-theme", t);
-  });
+  renderRecent();
 });
