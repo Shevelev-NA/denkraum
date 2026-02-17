@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const s = Math.max(0, sec - START_OFFSET);
     player.src = `https://www.youtube.com/embed/${id}?start=${s}&autoplay=1`;
     playerWrap.style.display = "block";
+    // НЕТ scrollTo
   }
 
   function highlight(text, word) {
@@ -30,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function card(item) {
     const el = document.createElement("div");
     el.className = "card";
+
     el.innerHTML = `
       <div class="thumbwrap">
         <img class="thumb" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="snippet">${highlight(item.text, currentQuery)}</div>
       </div>
     `;
+
     el.onclick = () => openVideo(item.videoId, item.start);
     return el;
   }
