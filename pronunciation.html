@@ -1,3 +1,4 @@
+<!-- pronunciation.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,9 +12,8 @@
 body{ margin:0; font-family:Inter, sans-serif; }
 
 .rs-top{
-  position:sticky;
-  top:0;
-  z-index:1000;
+  /* НЕ sticky — чтобы скроллилось как раньше */
+  position:relative;
   background:#f8f9ff;
   padding:30px 40px;
   border-bottom:1px solid #e5e7eb;
@@ -70,9 +70,8 @@ body{ margin:0; font-family:Inter, sans-serif; }
 
 .player-controls{
   display:flex;
-  justify-content:space-between;
   align-items:center;
-  gap:12px;
+  gap:10px;
   margin-top:14px;
   flex-wrap:wrap;
 }
@@ -81,8 +80,8 @@ body{ margin:0; font-family:Inter, sans-serif; }
   background:#111827;
   color:#fff;
   border:none;
-  font-size:22px;
-  padding:14px 22px;
+  font-size:18px;
+  padding:10px 16px;
   border-radius:12px;
   cursor:pointer;
 }
@@ -120,6 +119,12 @@ body{ margin:0; font-family:Inter, sans-serif; }
   font-weight:600;
 }
 
+#translateBtn{
+  background:#ffffff !important;
+  border:1px solid #e5e7eb !important;
+  color:#111827 !important;
+}
+
 .current-snippet{
   margin-top:16px;
   padding:16px;
@@ -140,6 +145,13 @@ body{ margin:0; font-family:Inter, sans-serif; }
   font-size:15px;
 }
 
+mark{
+  background:#fde047;
+  padding:2px 4px;
+  border-radius:4px;
+  font-weight:700;
+}
+
 .rs-grid{
   padding:20px 40px 60px;
   display:grid;
@@ -154,7 +166,10 @@ body{ margin:0; font-family:Inter, sans-serif; }
   cursor:pointer;
   box-shadow:0 8px 24px rgba(0,0,0,0.08);
   border:2px solid transparent;
+  transition:.2s;
 }
+
+.card:hover{ transform:translateY(-3px); }
 
 .card.active{
   border-color:#2563eb;
@@ -190,6 +205,7 @@ body{ margin:0; font-family:Inter, sans-serif; }
   <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
 
   <input id="searchInput" placeholder="Type a word and press Enter…" />
+
   <div id="recent">
     <div id="clearHistory" class="clear-btn">clear</div>
   </div>
@@ -219,6 +235,7 @@ body{ margin:0; font-family:Inter, sans-serif; }
     </div>
 
     <div class="current-snippet" id="currentSnippet"></div>
+
     <div class="translation" id="translationBox">
       <div id="translationText"></div>
     </div>
