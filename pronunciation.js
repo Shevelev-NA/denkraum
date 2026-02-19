@@ -29,12 +29,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const recentEl = document.getElementById("recent");
   const currentSnippetEl = document.getElementById("currentSnippet");
-
   const rsTop = document.getElementById("rsTop");
-  const rsSpacer = document.getElementById("rsSpacer");
 
   const HISTORY_KEY = "realSpeechHistory";
   const HISTORY_MAX = 10;
+
+  // ===== fixed header: padding-top = header height
+  function syncTopPadding() {
+    if (!rsTop) return;
+    const h = Math.ceil(rsTop.getBoundingClientRect().height);
+    document.body.style.paddingTop = `${h}px`;
+  }
+
+  // ResizeObserver: обновляет padding при любых изменениях в шапке (плеер, перевод, история)
+  const ro = new ResizeObserver(() => syncTopPadding());
+  ro.observe(rsTop);
 
   // =========================
   // Utils
@@ -86,30 +95,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateActive() {
     resultsEl.querySelectorAll(".card").forEach((card) => {
-      card.classList.toggle("active", Number(card.dataset.index) === currentIndex);
+      card.classList.toggle(
+        "active",
+        Number(card.dataset.index) === currentIndex
+      );
     });
   }
 
   function clearTranslation() {
-    translateRequestId++;
+    translateRequestId++; // отменяет все прошлые запросы
     translationBox.style.display = "none";
     translationText.textContent = "";
   }
-
-  // =========================
-  // Header height sync (NO JANK)
-  // =========================
-
-  function syncHeaderHeight() {
-    // Высота fixed header должна резервироваться spacer-ом
-    const h = rsTop.getBoundingClientRect().height;
-    document.documentElement.style.setProperty("--rsTopH", `${Math.ceil(h)}px`);
-    if (rsSpacer) rsSpacer.style.height = `${Math.ceil(h)}px`;
-  }
-
-  // ResizeObserver надежнее, чем костыли
-  const ro = new ResizeObserver(() => syncHeaderHeight());
-  ro.observe(rsTop);
 
   // =========================
   // Player
@@ -133,7 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         events: {
           onReady: (e) => {
-            try { e.target.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
+            try {
+              e.target.setPlaybackRate(parseFloat(speedSelect.value || "1"));
+            } catch {}
             try { e.target.playVideo(); } catch {}
           }
         }
@@ -141,11 +140,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    ytPlayer.loadVideoById({ videoId, startSeconds: Math.floor(startSeconds) });
+    ytPlayer.loadVideoById({
+      videoId,
+      startSeconds: Math.floor(startSeconds)
+    });
 
     setTimeout(() => {
-      try { ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
-      try { ytPlayer.playVideo(); } catch {}
+      try {
+        ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
+      } catch {}
+      try {
+        ytPlayer.playVideo();
+      } catch {}
     }, 150);
   }
 
@@ -166,9 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateProgress();
     updateActive();
-
-    // после раскрытия плеера меняется высота header — синхронизируем spacer
-    syncHeaderHeight();
+    syncTopPadding();
   }
 
   prevBtn.onclick = () => openIndex(currentIndex - 1);
@@ -176,28 +180,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   repeatBtn.onclick = () => {
     if (currentIndex < 0 || !ytPlayer) return;
-
     const item = results[currentIndex];
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     let n = 0;
     const doOnce = () => {
       if (!ytPlayer) return;
-      try { ytPlayer.seekTo(start, true); ytPlayer.playVideo(); } catch {}
+      try {
+        ytPlayer.seekTo(start, true);
+        ytPlayer.playVideo();
+      } catch {}
       n++;
       if (n < 3) setTimeout(doOnce, 1500);
     };
-
     doOnce();
   };
 
   speedSelect.onchange = () => {
     if (!ytPlayer) return;
-    try { ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
+    try {
+      ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
+    } catch {}
   };
 
   // =========================
-  // Translation (anti-race)
+  // Translation
   // =========================
 
   translateBtn.onclick = async () => {
@@ -223,11 +230,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const out = data?.responseData?.translatedText || "(translation unavailable)";
       translationText.textContent = out;
     } catch {
-      if (requestId === translateRequestId) translationText.textContent = "translation error";
+      if (requestId === translateRequestId) {
+        translationText.textContent = "translation error";
+      }
     }
 
-    // перевод мог изменить высоту header (строки переносятся)
-    syncHeaderHeight();
+    syncTopPadding();
   };
 
   // =========================
@@ -240,9 +248,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const res = await fetch(
       `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${offset}`
     );
-
     const data = await res.json();
     const newResults = data.results || [];
+
     const baseIndex = results.length;
 
     newResults.forEach((item, idx) => {
@@ -284,15 +292,15 @@ document.addEventListener("DOMContentLoaded", () => {
     updateProgress();
     updateActive();
 
+    // останавливаем старое видео (если есть)
     try { ytPlayer?.stopVideo?.(); } catch {}
 
     addHistory(query);
 
     await loadMore();
-    if (results.length > 0) openIndex(0);
 
-    // высота header после скрытия/показа плеера
-    syncHeaderHeight();
+    if (results.length > 0) openIndex(0);
+    syncTopPadding();
   }
 
   loadMoreBtn.onclick = loadMore;
@@ -306,8 +314,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
 
   function getHistory() {
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-    catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    } catch {
+      return [];
+    }
   }
 
   function setHistory(arr) {
@@ -331,7 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearBtn.onclick = () => {
       setHistory([]);
       renderHistory();
-      syncHeaderHeight();
+      syncTopPadding();
     };
 
     arr.forEach((w) => {
@@ -345,11 +356,11 @@ document.addEventListener("DOMContentLoaded", () => {
       recentEl.appendChild(chip);
     });
 
-    syncHeaderHeight();
+    syncTopPadding();
   }
 
   // =========================
-  // SHRINK (NO FLICKER)
+  // SHRINK (NO PLAYER RESIZE, NO JANK)
   // =========================
 
   let ticking = false;
@@ -362,15 +373,15 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(() => {
       const y = window.scrollY || 0;
 
-      // гистерезис: включаем позже, выключаем раньше
+      // гистерезис, чтобы не дрожало на границе
       if (!compact && y > 140) {
         compact = true;
         rsTop.classList.add("compact");
-        syncHeaderHeight();
+        syncTopPadding();
       } else if (compact && y < 60) {
         compact = false;
         rsTop.classList.remove("compact");
-        syncHeaderHeight();
+        syncTopPadding();
       }
 
       ticking = false;
@@ -378,10 +389,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", () => syncHeaderHeight());
+  window.addEventListener("resize", syncTopPadding);
 
   // init
   renderHistory();
-  syncHeaderHeight();
+  syncTopPadding();
   onScroll();
 });
