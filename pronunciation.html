@@ -12,89 +12,62 @@
     margin:0;
     font-family:Inter, sans-serif;
     background:#f3f4f6;
-    /* padding-top будет выставляться JS-ом под высоту фикс. панели */
   }
 
-  /* ======= FIXED TOP PANEL (NO SPACER) ======= */
-  .rs-top{
+  /* ================= FIX HEADER ================= */
+
+  .header{
     position:fixed;
     top:0;
     left:0;
     right:0;
-    z-index:3000;
-
+    z-index:4000;
     background:#ffffff;
+  }
+
+  .main-wrapper{
+    padding-top:140px; /* высота всего header */
+  }
+
+  /* ================= REAL SPEECH BLOCK ================= */
+
+  .rs-top{
+    padding:18px 40px 20px;
     border-bottom:1px solid #e5e7eb;
-
-    padding:18px 40px 16px;
-    transition: padding .18s ease, box-shadow .18s ease;
-    box-shadow:0 0 0 rgba(0,0,0,0);
-  }
-
-  .rs-top.compact{
-    padding:10px 40px 10px;
-    box-shadow:0 10px 28px rgba(0,0,0,0.10);
-  }
-
-  .rs-header{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:20px;
   }
 
   .rs-title{
     font-size:26px;
     font-weight:700;
-    margin:0;
-    line-height:1.1;
-    transition: font-size .18s ease;
-  }
-
-  .rs-top.compact .rs-title{
-    font-size:20px;
+    margin-bottom:4px;
   }
 
   .rs-sub{
     font-size:13px;
     color:#64748b;
-    margin-top:6px;
   }
 
-  .rs-top.compact .rs-sub{
-    display:none;
-  }
-
-  /* ======= SEARCH + HISTORY ======= */
   .rs-search-row{
     display:flex;
-    align-items:center;
     gap:12px;
-    margin-top:12px;
+    margin-top:14px;
     flex-wrap:wrap;
+    align-items:center;
   }
 
   #searchInput{
     width:360px;
-    max-width:70vw;
     padding:12px 16px;
     font-size:16px;
     border-radius:14px;
     border:1px solid #d1d5db;
     background:#ffffff;
-    outline:none;
-  }
-
-  #searchInput:focus{
-    border-color:#2563eb;
-    box-shadow:0 0 0 3px rgba(37,99,235,0.15);
   }
 
   #recent{
     display:flex;
     gap:8px;
     flex-wrap:wrap;
-    align-items:center;
   }
 
   .chip{
@@ -103,25 +76,22 @@
     border-radius:999px;
     font-size:13px;
     cursor:pointer;
-    user-select:none;
   }
 
   .clear-btn{
     font-size:12px;
     color:#ef4444;
     cursor:pointer;
-    user-select:none;
   }
 
-  /* ======= PLAYER ======= */
   #playerWrap{
-    margin-top:14px;
+    margin-top:16px;
     display:none;
   }
 
   #player{
     width:100%;
-    height:300px; /* важно: НЕ меняем высоту при shrink */
+    height:300px;
     border-radius:16px;
     overflow:hidden;
     background:#000;
@@ -129,29 +99,27 @@
 
   .player-controls{
     display:flex;
-    align-items:center;
     gap:10px;
     margin-top:12px;
     flex-wrap:wrap;
+    align-items:center;
   }
 
   .nav-btn{
     background:#111827;
     color:#fff;
     border:none;
-    font-size:18px;
     padding:10px 16px;
     border-radius:12px;
     cursor:pointer;
   }
 
   .progress{
-    font-size:14px;
-    font-weight:700;
     padding:6px 10px;
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:999px;
+    font-weight:600;
   }
 
   .btn{
@@ -178,22 +146,18 @@
     font-weight:600;
   }
 
-  /* translate не должен быть прозрачным ни при каких обстоятельствах */
   #translateBtn{
     background:#ffffff !important;
     color:#111827 !important;
-    border:1px solid #d1d5db !important;
     opacity:1 !important;
   }
 
-  /* ======= SNIPPET + TRANSLATION (НЕ УРОДУЕМ) ======= */
   .current-snippet{
     margin-top:14px;
     padding:14px;
     background:#ffffff;
     border-radius:14px;
     font-size:16px;
-    line-height:1.6;
   }
 
   .translation{
@@ -203,8 +167,6 @@
     color:#e5e7eb;
     border-radius:12px;
     display:none;
-    max-width:700px;
-    font-size:15px;
   }
 
   mark{
@@ -214,9 +176,8 @@
     font-weight:700;
   }
 
-  /* ======= RESULTS ======= */
   .rs-grid{
-    padding:24px 40px 60px;
+    padding:30px 40px 60px;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
     gap:24px;
@@ -229,10 +190,7 @@
     cursor:pointer;
     box-shadow:0 8px 24px rgba(0,0,0,0.08);
     border:2px solid transparent;
-    transition:.2s;
   }
-
-  .card:hover{ transform:translateY(-3px); }
 
   .card.active{ border-color:#2563eb; }
 
@@ -248,7 +206,6 @@
     display:block;
     margin:30px auto;
     padding:12px 24px;
-    font-size:15px;
     border:none;
     border-radius:12px;
     background:#2563eb;
@@ -263,58 +220,64 @@
 <header class="header">
   <div class="header-inner">
     <a class="logo" href="./index.html">Denkraum</a>
+
+    <nav class="nav">
+      <a href="./index.html">Home</a>
+      <a href="./ocr.html">OCR</a>
+      <a href="./pronunciation.html">Real Speech</a>
+    </nav>
+  </div>
+
+  <div class="rs-top">
+
+    <div class="rs-title">Real Speech</div>
+    <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
+
+    <div class="rs-search-row">
+      <input id="searchInput" placeholder="Type a word and press Enter…" />
+      <div id="recent">
+        <div id="clearHistory" class="clear-btn">clear</div>
+      </div>
+    </div>
+
+    <div id="playerWrap">
+      <div id="player"></div>
+
+      <div class="player-controls">
+        <button class="nav-btn" id="prevBtn">◀</button>
+        <div class="progress" id="progressText">0 of 0</div>
+        <button class="nav-btn" id="nextBtn">▶</button>
+
+        <button class="btn primary" id="repeatBtn">Repeat 3×</button>
+
+        <select id="speedSelect" class="select">
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.25">1.25x</option>
+        </select>
+
+        <select id="langSelect" class="select">
+          <option value="ru">RU</option>
+          <option value="en">EN</option>
+        </select>
+
+        <button class="btn" id="translateBtn" type="button">Translate</button>
+      </div>
+
+      <div class="current-snippet" id="currentSnippet"></div>
+
+      <div class="translation" id="translationBox">
+        <div id="translationText"></div>
+      </div>
+    </div>
+
   </div>
 </header>
 
-<div class="rs-top" id="rsTop">
-  <div class="rs-header">
-    <div>
-      <div class="rs-title">Real Speech</div>
-      <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
-    </div>
-  </div>
-
-  <div class="rs-search-row">
-    <input id="searchInput" placeholder="Type a word and press Enter…" />
-    <div id="recent">
-      <div id="clearHistory" class="clear-btn">clear</div>
-    </div>
-  </div>
-
-  <div id="playerWrap">
-    <div id="player"></div>
-
-    <div class="player-controls">
-      <button class="nav-btn" id="prevBtn">◀</button>
-      <div class="progress" id="progressText">0 of 0</div>
-      <button class="nav-btn" id="nextBtn">▶</button>
-
-      <button class="btn primary" id="repeatBtn">Repeat 3×</button>
-
-      <select id="speedSelect" class="select">
-        <option value="0.75">0.75x</option>
-        <option value="1" selected>1x</option>
-        <option value="1.25">1.25x</option>
-      </select>
-
-      <select id="langSelect" class="select">
-        <option value="ru">RU</option>
-        <option value="en">EN</option>
-      </select>
-
-      <button class="btn" id="translateBtn" type="button">Translate</button>
-    </div>
-
-    <div class="current-snippet" id="currentSnippet"></div>
-
-    <div class="translation" id="translationBox">
-      <div id="translationText"></div>
-    </div>
-  </div>
+<div class="main-wrapper">
+  <div id="results" class="rs-grid"></div>
+  <button id="loadMoreBtn" class="load-more">Show more</button>
 </div>
-
-<div id="results" class="rs-grid"></div>
-<button id="loadMoreBtn" class="load-more">Show more</button>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script src="./pronunciation.js"></script>
