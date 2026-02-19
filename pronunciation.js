@@ -6,25 +6,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const player = document.getElementById("player");
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
+  const repeatBtn = document.getElementById("repeatBtn");
+  const speedSelect = document.getElementById("speedSelect");
+  const progressText = document.getElementById("progressText");
   const currentSnippet = document.getElementById("currentSnippet");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
-  const recentEl = document.getElementById("recent");
+  const translateRU = document.getElementById("translateRU");
+  const translateEN = document.getElementById("translateEN");
 
   const API = "http://localhost:3001/api/search";
   const PAGE_SIZE = 10;
   const START_OFFSET = 4;
-  const MAX_HISTORY = 10;
 
   let results = [];
   let currentIndex = -1;
   let currentQuery = "";
   let offset = 0;
+  let repeatCount = 0;
 
   function highlight(text, word) {
     if (!word) return text;
     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`(${escaped})`, "gi");
-    return text.replace(re, "<mark>$1</mark>");
+    return text.replace(new RegExp(`(${escaped})`, "gi"), "<mark>$1</mark>");
+  }
+
+  function updateActiveCard() {
+    document.querySelectorAll(".card").forEach((c, i) => {
+      c.classList.toggle("active", i === currentIndex);
+    });
   }
 
   function openByIndex(index) {
@@ -34,29 +43,65 @@ document.addEventListener("DOMContentLoaded", () => {
     const item = results[index];
 
     const s = Math.max(0, item.start - START_OFFSET);
-    player.src = `https://www.youtube.com/embed/${item.videoId}?start=${s}&autoplay=1`;
+    player.src = `https://www.youtube.com/embed/${item.videoId}?start=${s}&autoplay=1&controls=1`;
 
     currentSnippet.innerHTML = highlight(item.text, currentQuery);
+    progressText.textContent = `${currentIndex + 1} of ${results.length}`;
     playerWrap.style.display = "block";
+
+    updateActiveCard();
   }
 
   prevBtn.onclick = () => openByIndex(currentIndex - 1);
   nextBtn.onclick = () => openByIndex(currentIndex + 1);
 
+  repeatBtn.onclick = () => {
+    repeatCount = 3;
+    openByIndex(currentIndex);
+  };
+
+  speedSelect.onchange = () => {
+    const rate = speedSelect.value;
+    player.contentWindow.postMessage(
+      JSON.stringify({ event: "command", func: "setPlaybackRate", args: [parseFloat(rate)] }),
+      "*"
+    );
+  };
+
+  async function translate(text, lang) {
+    const res = await fetch("https://api.mymemory.translated.net/get?q=" +
+      encodeURIComponent(text) + "&langpair=de|" + lang);
+    const data = await res.json();
+    return data.responseData.translatedText;
+  }
+
+  translateRU.onclick = async () => {
+    const translated = await translate(results[currentIndex].text, "ru");
+    currentSnippet.innerHTML += `<hr>${translated}`;
+  };
+
+  translateEN.onclick = async () => {
+    const translated = await translate(results[currentIndex].text, "en");
+    currentSnippet.innerHTML += `<hr>${translated}`;
+  };
+
   function renderCards(list) {
     list.forEach((item, index) => {
+      const globalIndex = results.length + index;
       const el = document.createElement("div");
       el.className = "card";
+
+      const extended = item.text;
 
       el.innerHTML = `
         <img class="thumb"
              src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="meta">
-          <div class="snippet">${highlight(item.text, currentQuery)}</div>
+          <div>${highlight(extended, currentQuery)}</div>
         </div>
       `;
 
-      el.onclick = () => openByIndex(index + offset - list.length);
+      el.onclick = () => openByIndex(globalIndex);
       resultsEl.appendChild(el);
     });
   }
@@ -68,9 +113,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = await res.json();
     const list = data.results || [];
 
-    results = results.concat(list);
     renderCards(list);
-
+    results = results.concat(list);
     offset += PAGE_SIZE;
   }
 
@@ -79,7 +123,6 @@ document.addEventListener("DOMContentLoaded", () => {
     offset = 0;
     resultsEl.innerHTML = "";
     currentQuery = q;
-
     await loadMore();
   }
 
