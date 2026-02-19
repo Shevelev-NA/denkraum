@@ -19,46 +19,9 @@ body{ margin:0; font-family:Inter, sans-serif; }
   border-bottom:1px solid #e5e7eb;
 }
 
-.rs-title{ font-size:28px; font-weight:700; margin-bottom:10px; }
-.rs-sub{ font-size:14px; color:#64748b; margin-bottom:15px; }
-
-#searchInput{
-  width:340px;
-  padding:12px 16px;
-  font-size:16px;
-  border-radius:14px;
-  border:1px solid #e5e7eb;
-  outline:none;
-}
-
-#recent{
-  margin-top:12px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-}
-
-.chip{
-  padding:6px 12px;
-  background:#e5e7eb;
-  border-radius:999px;
-  font-size:13px;
-  cursor:pointer;
-}
-
-.clear-btn{
-  font-size:12px;
-  color:#ef4444;
-  cursor:pointer;
-}
-
 /* ===== PLAYER ===== */
 
-#playerWrap{
-  margin-top:20px;
-  display:none;
-}
+#playerWrap{ margin-top:20px; display:none; }
 
 #player{
   width:100%;
@@ -69,23 +32,50 @@ body{ margin:0; font-family:Inter, sans-serif; }
 
 .player-controls{
   display:flex;
-  justify-content:center;
-  gap:30px;
+  justify-content:space-between;
+  align-items:center;
   margin-top:14px;
+  gap:20px;
+}
+
+.control-left,
+.control-right{
+  display:flex;
+  gap:12px;
+  align-items:center;
 }
 
 .nav-btn{
   background:#111827;
   color:#fff;
   border:none;
-  font-size:22px;
-  padding:14px 26px;
-  border-radius:12px;
+  font-size:18px;
+  padding:10px 18px;
+  border-radius:10px;
   cursor:pointer;
 }
 
-.nav-btn:hover{
-  background:#000;
+.progress{
+  font-weight:600;
+  font-size:14px;
+  color:#111827;
+}
+
+.speed-btn{
+  padding:6px 12px;
+  border-radius:8px;
+  border:1px solid #d1d5db;
+  cursor:pointer;
+  background:#fff;
+}
+
+.repeat-btn{
+  padding:6px 12px;
+  border-radius:8px;
+  border:none;
+  background:#2563eb;
+  color:#fff;
+  cursor:pointer;
 }
 
 .current-snippet{
@@ -98,11 +88,14 @@ body{ margin:0; font-family:Inter, sans-serif; }
   box-shadow:0 8px 20px rgba(0,0,0,0.06);
 }
 
-mark{
-  background:#fde047;
-  padding:2px 4px;
-  border-radius:4px;
-  font-weight:600;
+.translate-controls{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+}
+
+.card.active{
+  outline:3px solid #2563eb;
 }
 
 /* ===== GRID ===== */
@@ -123,24 +116,15 @@ mark{
   transition:.25s;
 }
 
-.card:hover{ transform:translateY(-6px); }
-
 .thumb{ width:100%; aspect-ratio:16/9; object-fit:cover; }
 
 .meta{ padding:12px 14px; }
 
-.snippet{ font-size:14px; line-height:1.5; }
-
-.load-more{
-  margin:20px auto;
-  display:block;
-  padding:12px 22px;
-  font-size:15px;
-  border:none;
-  border-radius:12px;
-  background:#2563eb;
-  color:#fff;
-  cursor:pointer;
+mark{
+  background:#fde047;
+  padding:2px 4px;
+  border-radius:4px;
+  font-weight:600;
 }
 </style>
 </head>
@@ -155,30 +139,39 @@ mark{
 </header>
 
 <div class="rs-top">
-  <div class="rs-title">Real Speech</div>
-  <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
-
   <input id="searchInput" placeholder="Type a word and press Enter…" />
-
-  <div id="recent">
-    <div id="clearHistory" class="clear-btn">clear</div>
-  </div>
 
   <div id="playerWrap">
     <iframe id="player" allow="autoplay"></iframe>
 
     <div class="player-controls">
-      <button class="nav-btn" id="prevBtn">◀ Previous</button>
-      <button class="nav-btn" id="nextBtn">Next ▶</button>
+      <div class="control-left">
+        <button class="nav-btn" id="prevBtn">◀</button>
+        <div class="progress" id="progressText"></div>
+        <button class="nav-btn" id="nextBtn">▶</button>
+      </div>
+
+      <div class="control-right">
+        <button class="repeat-btn" id="repeatBtn">Repeat 3×</button>
+        <select id="speedSelect" class="speed-btn">
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.25">1.25x</option>
+        </select>
+      </div>
     </div>
 
     <div class="current-snippet" id="currentSnippet"></div>
+
+    <div class="translate-controls">
+      <button class="speed-btn" id="translateRU">RU</button>
+      <button class="speed-btn" id="translateEN">EN</button>
+    </div>
   </div>
 </div>
 
 <div id="results" class="rs-grid"></div>
-
-<button id="loadMoreBtn" class="load-more">Show more</button>
+<button id="loadMoreBtn">Show more</button>
 
 <script src="./pronunciation.js"></script>
 </body>
