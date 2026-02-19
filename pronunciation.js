@@ -42,8 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ResizeObserver: обновляет padding при любых изменениях в шапке (плеер, перевод, история)
+  if (rsTop) {
   const ro = new ResizeObserver(() => syncTopPadding());
   ro.observe(rsTop);
+  }
 
   // =========================
   // Utils
