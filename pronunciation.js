@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const recentEl = document.getElementById("recent");
   const currentSnippetEl = document.getElementById("currentSnippet");
+
   const rsTop = document.getElementById("rsTop");
+  const rsSpacer = document.getElementById("rsSpacer");
 
   const HISTORY_KEY = "realSpeechHistory";
   const HISTORY_MAX = 10;
@@ -84,10 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateActive() {
     resultsEl.querySelectorAll(".card").forEach((card) => {
-      card.classList.toggle(
-        "active",
-        Number(card.dataset.index) === currentIndex
-      );
+      card.classList.toggle("active", Number(card.dataset.index) === currentIndex);
     });
   }
 
@@ -96,6 +95,21 @@ document.addEventListener("DOMContentLoaded", () => {
     translationBox.style.display = "none";
     translationText.textContent = "";
   }
+
+  // =========================
+  // Header height sync (NO JANK)
+  // =========================
+
+  function syncHeaderHeight() {
+    // Высота fixed header должна резервироваться spacer-ом
+    const h = rsTop.getBoundingClientRect().height;
+    document.documentElement.style.setProperty("--rsTopH", `${Math.ceil(h)}px`);
+    if (rsSpacer) rsSpacer.style.height = `${Math.ceil(h)}px`;
+  }
+
+  // ResizeObserver надежнее, чем костыли
+  const ro = new ResizeObserver(() => syncHeaderHeight());
+  ro.observe(rsTop);
 
   // =========================
   // Player
@@ -119,30 +133,19 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         events: {
           onReady: (e) => {
-            try {
-              e.target.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-            } catch {}
-            try {
-              e.target.playVideo();
-            } catch {}
+            try { e.target.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
+            try { e.target.playVideo(); } catch {}
           }
         }
       });
       return;
     }
 
-    ytPlayer.loadVideoById({
-      videoId,
-      startSeconds: Math.floor(startSeconds)
-    });
+    ytPlayer.loadVideoById({ videoId, startSeconds: Math.floor(startSeconds) });
 
     setTimeout(() => {
-      try {
-        ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-      } catch {}
-      try {
-        ytPlayer.playVideo();
-      } catch {}
+      try { ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
+      try { ytPlayer.playVideo(); } catch {}
     }, 150);
   }
 
@@ -163,6 +166,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateProgress();
     updateActive();
+
+    // после раскрытия плеера меняется высота header — синхронизируем spacer
+    syncHeaderHeight();
   }
 
   prevBtn.onclick = () => openIndex(currentIndex - 1);
@@ -175,15 +181,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     let n = 0;
-
     const doOnce = () => {
       if (!ytPlayer) return;
-
-      try {
-        ytPlayer.seekTo(start, true);
-        ytPlayer.playVideo();
-      } catch {}
-
+      try { ytPlayer.seekTo(start, true); ytPlayer.playVideo(); } catch {}
       n++;
       if (n < 3) setTimeout(doOnce, 1500);
     };
@@ -193,13 +193,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   speedSelect.onchange = () => {
     if (!ytPlayer) return;
-    try {
-      ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-    } catch {}
+    try { ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
   };
 
   // =========================
-  // Translation
+  // Translation (anti-race)
   // =========================
 
   translateBtn.onclick = async () => {
@@ -222,14 +220,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (requestId !== translateRequestId) return;
 
       const data = await res.json();
-      const out =
-        data?.responseData?.translatedText || "(translation unavailable)";
+      const out = data?.responseData?.translatedText || "(translation unavailable)";
       translationText.textContent = out;
     } catch {
-      if (requestId === translateRequestId) {
-        translationText.textContent = "translation error";
-      }
+      if (requestId === translateRequestId) translationText.textContent = "translation error";
     }
+
+    // перевод мог изменить высоту header (строки переносятся)
+    syncHeaderHeight();
   };
 
   // =========================
@@ -240,14 +238,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentQuery) return;
 
     const res = await fetch(
-      `${API}?query=${encodeURIComponent(
-        currentQuery
-      )}&count=${PAGE_SIZE}&offset=${offset}`
+      `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${offset}`
     );
 
     const data = await res.json();
     const newResults = data.results || [];
-
     const baseIndex = results.length;
 
     newResults.forEach((item, idx) => {
@@ -258,7 +253,6 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.index = String(absoluteIndex);
 
       const ctx = buildContext(item.text, currentQuery);
-
       card.innerHTML = `
         <img class="thumb" loading="lazy" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="meta">${highlightHtml(ctx, currentQuery)}</div>
@@ -290,15 +284,15 @@ document.addEventListener("DOMContentLoaded", () => {
     updateProgress();
     updateActive();
 
-    try {
-      ytPlayer?.stopVideo?.();
-    } catch {}
+    try { ytPlayer?.stopVideo?.(); } catch {}
 
     addHistory(query);
 
     await loadMore();
-
     if (results.length > 0) openIndex(0);
+
+    // высота header после скрытия/показа плеера
+    syncHeaderHeight();
   }
 
   loadMoreBtn.onclick = loadMore;
@@ -312,11 +306,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
 
   function getHistory() {
-    try {
-      return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+    catch { return []; }
   }
 
   function setHistory(arr) {
@@ -334,13 +325,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderHistory() {
     const arr = getHistory();
-    recentEl.innerHTML =
-      '<div id="clearHistory" class="clear-btn">clear</div>';
+    recentEl.innerHTML = '<div id="clearHistory" class="clear-btn">clear</div>';
 
     const clearBtn = document.getElementById("clearHistory");
     clearBtn.onclick = () => {
       setHistory([]);
       renderHistory();
+      syncHeaderHeight();
     };
 
     arr.forEach((w) => {
@@ -353,20 +344,44 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       recentEl.appendChild(chip);
     });
+
+    syncHeaderHeight();
   }
 
   // =========================
-  // SHRINK HEADER
+  // SHRINK (NO FLICKER)
   // =========================
 
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 60) {
-      rsTop.classList.add("compact");
-    } else {
-      rsTop.classList.remove("compact");
-    }
-  });
+  let ticking = false;
+  let compact = false;
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+
+    requestAnimationFrame(() => {
+      const y = window.scrollY || 0;
+
+      // гистерезис: включаем позже, выключаем раньше
+      if (!compact && y > 140) {
+        compact = true;
+        rsTop.classList.add("compact");
+        syncHeaderHeight();
+      } else if (compact && y < 60) {
+        compact = false;
+        rsTop.classList.remove("compact");
+        syncHeaderHeight();
+      }
+
+      ticking = false;
+    });
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", () => syncHeaderHeight());
 
   // init
   renderHistory();
+  syncHeaderHeight();
+  onScroll();
 });
