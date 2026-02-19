@@ -1,7 +1,10 @@
 // pronunciation.js
+
 document.addEventListener("DOMContentLoaded", () => {
   const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 10;
+
+  const PAGE_SIZE = 20;
+  const MIN_FIRST_BATCH = 10;
   const START_OFFSET = 4;
 
   let results = [];
@@ -10,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let offset = 0;
   let ytPlayer = null;
 
+  // anti-race for translation
   let translateRequestId = 0;
 
   const input = document.getElementById("searchInput");
@@ -28,10 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const recentEl = document.getElementById("recent");
   const currentSnippetEl = document.getElementById("currentSnippet");
   const rsTop = document.getElementById("rsTop");
+  const headerEl = document.querySelector(".header");
+  const mainWrapper = document.querySelector(".main-wrapper");
 
   const HISTORY_KEY = "realSpeechHistory";
-  const HISTORY_MAX = 10;
+  const HISTORY_MAX = 15;
 
+  // =========================
+  // Fixed header offset
+  // =========================
+  function syncHeaderOffset() {
+    if (!headerEl || !mainWrapper) return;
+    const h = Math.ceil(headerEl.getBoundingClientRect().height);
+    mainWrapper.style.paddingTop = `${h}px`;
+  }
+
+  window.addEventListener("resize", syncHeaderOffset);
+  syncHeaderOffset();
+
+  // =========================
+  // Utils
+  // =========================
   function escapeHtml(s) {
     return String(s ?? "")
       .replaceAll("&", "&amp;")
@@ -42,28 +63,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function highlightHtml(text, word) {
-    const safe = escapeHtml(text ?? "");
+    const safe = escapeHtml(text);
     if (!word) return safe;
     const escaped = String(word).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return safe.replace(new RegExp(`(${escaped})`, "gi"), "<mark>$1</mark>");
   }
 
+  function pickText(item) {
+    return (
+      item?.text ??
+      item?.subtitle ??
+      item?.caption ??
+      item?.content ??
+      ""
+    );
+  }
+
   function buildContext(text, word) {
     const raw = String(text ?? "");
+    if (!raw) return "";
     if (!word) return raw;
-    const lower = raw.toLowerCase();
-    const w = String(word).toLowerCase();
-    const idx = lower.indexOf(w);
-    if (idx < 0) return raw;
-    const PAD = 70;
-    const start = Math.max(0, idx - PAD);
-    const end = Math.min(raw.length, idx + w.length + PAD);
-    let left = raw.slice(start, idx);
-    const mid = raw.slice(idx, idx + w.length);
-    let right = raw.slice(idx + w.length, end);
-    if (start > 0) left = "… " + left;
-    if (end < raw.length) right = right + " …";
-    return left + mid + right;
+    return raw;
   }
 
   function updateProgress() {
@@ -74,22 +94,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateActive() {
     resultsEl.querySelectorAll(".card").forEach((card) => {
-      card.classList.toggle(
-        "active",
-        Number(card.dataset.index) === currentIndex
-      );
+      card.classList.toggle("active", Number(card.dataset.index) === currentIndex);
     });
   }
 
   function clearTranslation() {
-    translateRequestId++;
+    translateRequestId++; // отменяет все прошлые запросы
     translationBox.style.display = "none";
     translationText.textContent = "";
+    syncHeaderOffset();
   }
 
+  // =========================
+  // Player
+  // =========================
   function ensurePlayer(videoId, startSeconds) {
     if (!window.YT || !YT.Player) {
-      setTimeout(() => ensurePlayer(videoId, startSeconds), 250);
+      setTimeout(() => ensurePlayer(videoId, startSeconds), 200);
       return;
     }
 
@@ -102,15 +123,27 @@ document.addEventListener("DOMContentLoaded", () => {
           controls: 1,
           rel: 0,
           modestbranding: 1
+        },
+        events: {
+          onReady: (e) => {
+            try {
+              e.target.setPlaybackRate(parseFloat(speedSelect.value || "1"));
+            } catch {}
+            try { e.target.playVideo(); } catch {}
+          }
         }
       });
       return;
     }
 
-    ytPlayer.loadVideoById({
-      videoId,
-      startSeconds: Math.floor(startSeconds)
-    });
+    ytPlayer.loadVideoById({ videoId, startSeconds: Math.floor(startSeconds) });
+
+    setTimeout(() => {
+      try {
+        ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
+      } catch {}
+      try { ytPlayer.playVideo(); } catch {}
+    }, 120);
   }
 
   function openIndex(i) {
@@ -121,15 +154,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     playerWrap.style.display = "block";
-    clearTranslation();
+    syncHeaderOffset();       // FIX: пересчёт отступа, когда плеер появляется
+    clearTranslation();       // внутри тоже пересчитывает
 
     ensurePlayer(item.videoId, start);
 
-    const contextText = buildContext(item.text, currentQuery);
-    currentSnippetEl.innerHTML = highlightHtml(contextText, currentQuery);
+    const rawText = pickText(item);
+    const ctx = buildContext(rawText, currentQuery);
+    currentSnippetEl.innerHTML = highlightHtml(ctx, currentQuery);
 
     updateProgress();
     updateActive();
+
+    syncHeaderOffset();       // FIX: на всякий случай после отрисовки текста
   }
 
   prevBtn.onclick = () => openIndex(currentIndex - 1);
@@ -137,84 +174,95 @@ document.addEventListener("DOMContentLoaded", () => {
 
   repeatBtn.onclick = () => {
     if (currentIndex < 0 || !ytPlayer) return;
+
     const item = results[currentIndex];
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     let n = 0;
     const doOnce = () => {
       if (!ytPlayer) return;
-      try {
-        ytPlayer.seekTo(start, true);
-        ytPlayer.playVideo();
-      } catch {}
+      try { ytPlayer.seekTo(start, true); ytPlayer.playVideo(); } catch {}
       n++;
       if (n < 3) setTimeout(doOnce, 1500);
     };
+
     doOnce();
   };
 
   speedSelect.onchange = () => {
     if (!ytPlayer) return;
-    try {
-      ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-    } catch {}
+    try { ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
   };
 
-  // ==========================
-  // FIXED TRANSLATION BLOCK
-  // ==========================
+  // =========================
+  // Translation (anti-race)
+  // =========================
   translateBtn.onclick = async () => {
     if (currentIndex < 0) return;
 
     const requestId = ++translateRequestId;
+
     const item = results[currentIndex];
     const target = langSelect.value || "ru";
-    const textForTranslate = buildContext(item.text, currentQuery);
+
+    const rawText = pickText(item);
+    const textForTranslate = buildContext(rawText, currentQuery);
+
+    if (!textForTranslate.trim()) return;
 
     translationBox.style.display = "block";
-    translationText.textContent = "Translating...";
+    translationText.textContent = "…";
+    syncHeaderOffset(); // FIX: переводный блок тоже меняет высоту header
 
+    // 1) MyMemory + de= (чтобы меньше резало)
     try {
-      // Primary: MyMemory with identifier
-      let res = await fetch(
+      const res = await fetch(
         `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textForTranslate)}&langpair=de|${encodeURIComponent(target)}&de=denkraum@app.com`
       );
 
-      if (!res.ok) throw new Error("Primary failed");
+      if (requestId !== translateRequestId) return;
 
-      let data = await res.json();
-      let out = data?.responseData?.translatedText;
+      const data = await res.json();
+      const out = data?.responseData?.translatedText;
 
-      if (!out) throw new Error("No text");
+      if (out) {
+        translationText.textContent = out;
+        syncHeaderOffset();
+        return;
+      }
+      throw new Error("no translatedText");
+    } catch {}
+
+    // 2) Fallback: Google gtx
+    try {
+      const res2 = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(textForTranslate)}`
+      );
 
       if (requestId !== translateRequestId) return;
-      translationText.textContent = out;
 
+      const data2 = await res2.json();
+      const out2 = Array.isArray(data2?.[0]) ? data2[0].map(x => x?.[0]).join("") : "";
+      translationText.textContent = out2 || "translation error";
     } catch {
-      // Fallback: unofficial Google endpoint
-      try {
-        const res2 = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=${target}&dt=t&q=${encodeURIComponent(textForTranslate)}`
-        );
-
-        const data2 = await res2.json();
-        const out2 = data2?.[0]?.map(x => x[0]).join(" ") || "Translation error";
-
-        if (requestId !== translateRequestId) return;
-        translationText.textContent = out2;
-
-      } catch {
-        translationText.textContent = "Translation error";
+      if (requestId === translateRequestId) {
+        translationText.textContent = "translation error";
       }
     }
+
+    syncHeaderOffset();
   };
 
+  // =========================
+  // Search
+  // =========================
   async function loadMore() {
-    if (!currentQuery) return;
+    if (!currentQuery) return 0;
 
     const res = await fetch(
       `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${offset}`
     );
+
     const data = await res.json();
     const newResults = data.results || [];
 
@@ -223,10 +271,13 @@ document.addEventListener("DOMContentLoaded", () => {
     newResults.forEach((item, idx) => {
       const card = document.createElement("div");
       card.className = "card";
+
       const absoluteIndex = baseIndex + idx;
       card.dataset.index = String(absoluteIndex);
 
-      const ctx = buildContext(item.text, currentQuery);
+      const rawText = pickText(item);
+      const ctx = buildContext(rawText, currentQuery);
+
       card.innerHTML = `
         <img class="thumb" loading="lazy" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="meta">${highlightHtml(ctx, currentQuery)}</div>
@@ -241,6 +292,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateProgress();
     updateActive();
+
+    loadMoreBtn.style.display = newResults.length === 0 ? "none" : "block";
+
+    return newResults.length;
   }
 
   async function search(q) {
@@ -261,17 +316,27 @@ document.addEventListener("DOMContentLoaded", () => {
     try { ytPlayer?.stopVideo?.(); } catch {}
 
     addHistory(query);
-    await loadMore();
+
+    let got = await loadMore();
+
+    while (results.length < MIN_FIRST_BATCH && got > 0) {
+      got = await loadMore();
+    }
 
     if (results.length > 0) openIndex(0);
+
+    syncHeaderOffset();
   }
 
-  loadMoreBtn.onclick = loadMore;
+  loadMoreBtn.onclick = () => loadMore();
 
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") search(input.value);
   });
 
+  // =========================
+  // History (safe for blocked storage)
+  // =========================
   function getHistory() {
     try {
       return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
@@ -283,7 +348,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function setHistory(arr) {
     try {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
-    } catch {}
+    } catch {
+      // storage blocked -> just ignore
+    }
   }
 
   function addHistory(q) {
@@ -304,6 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
       clearBtn.onclick = () => {
         setHistory([]);
         renderHistory();
+        syncHeaderOffset();
       };
     }
 
@@ -317,18 +385,42 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       recentEl.appendChild(chip);
     });
+
+    syncHeaderOffset();
   }
 
-  function updateDock() {
-    const rect = rsTop.getBoundingClientRect();
-    const shouldDock = rect.bottom < 80;
-    rsTop.classList.toggle("docked", shouldDock);
-    document.body.classList.toggle("has-dock-padding", shouldDock);
+  // =========================
+  // Shrink (stable)
+  // =========================
+  let ticking = false;
+  let compact = false;
+
+  function onScroll() {
+    if (!rsTop) return;
+    if (ticking) return;
+    ticking = true;
+
+    requestAnimationFrame(() => {
+      const y = window.scrollY || 0;
+
+      if (!compact && y > 160) {
+        compact = true;
+        rsTop.classList.add("compact");
+        syncHeaderOffset();
+      } else if (compact && y < 60) {
+        compact = false;
+        rsTop.classList.remove("compact");
+        syncHeaderOffset();
+      }
+
+      ticking = false;
+    });
   }
 
-  window.addEventListener("scroll", updateDock, { passive: true });
-  window.addEventListener("resize", updateDock);
+  window.addEventListener("scroll", onScroll, { passive: true });
 
+  // init
   renderHistory();
-  updateDock();
+  syncHeaderOffset();
+  onScroll();
 });
