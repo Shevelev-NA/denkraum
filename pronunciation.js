@@ -337,3 +337,12 @@ document.addEventListener("DOMContentLoaded", () => {
   renderHistory();
   updateDock();
 });
+// SHRINK ON SCROLL
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 60) {
+    rsTop.classList.add("compact");
+  } else {
+    rsTop.classList.remove("compact");
+  }
+});
+
