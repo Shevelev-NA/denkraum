@@ -15,7 +15,7 @@ body{
 }
 
 /* ============================= */
-/* STICKY TOP BLOCK              */
+/* STICKY HEADER                 */
 /* ============================= */
 
 .rs-top{
@@ -23,37 +23,42 @@ body{
   top:0;
   z-index:2000;
   background:#ffffff;
-  padding:18px 40px 20px;
+  padding:22px 40px 20px;
   border-bottom:1px solid #e5e7eb;
+  transition:all .25s ease;
 }
 
-/* Верхняя строка */
-.rs-header-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:40px;
+/* shrink state */
+.rs-top.compact{
+  padding:10px 40px 10px;
 }
 
-/* Левая часть */
-.rs-left{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+.rs-top.compact .rs-sub{
+  display:none;
 }
+
+.rs-top.compact #player{
+  height:180px;
+}
+
+.rs-top.compact .rs-title{
+  font-size:20px;
+}
+
+/* ============================= */
 
 .rs-title{
   font-size:26px;
   font-weight:700;
   margin:0;
+  transition:.2s;
 }
 
 .rs-sub{
   font-size:13px;
   color:#64748b;
+  margin-top:6px;
 }
-
-/* Правая часть убрана — поиск теперь слева */
 
 .rs-search-row{
   display:flex;
@@ -63,29 +68,20 @@ body{
   flex-wrap:wrap;
 }
 
-/* ============================= */
-/* SEARCH                        */
-/* ============================= */
-
 #searchInput{
-  width:380px;
+  width:360px;
   padding:12px 16px;
   font-size:16px;
   border-radius:14px;
   border:1px solid #d1d5db;
   background:#ffffff;
   outline:none;
-  transition:all .15s ease;
 }
 
 #searchInput:focus{
   border-color:#2563eb;
   box-shadow:0 0 0 3px rgba(37,99,235,0.15);
 }
-
-/* ============================= */
-/* HISTORY                       */
-/* ============================= */
 
 #recent{
   display:flex;
@@ -99,7 +95,6 @@ body{
   border-radius:999px;
   font-size:13px;
   cursor:pointer;
-  user-select:none;
 }
 
 .clear-btn{
@@ -108,9 +103,7 @@ body{
   cursor:pointer;
 }
 
-/* ============================= */
-/* PLAYER                        */
-/* ============================= */
+/* PLAYER */
 
 #playerWrap{
   margin-top:18px;
@@ -123,6 +116,7 @@ body{
   border-radius:16px;
   overflow:hidden;
   background:#000;
+  transition:height .25s ease;
 }
 
 .player-controls{
@@ -161,7 +155,6 @@ body{
   font-weight:600;
 }
 
-/* ЖЁСТКО фиксируем Translate */
 #translateBtn{
   background:#ffffff !important;
   color:#111827 !important;
@@ -211,9 +204,7 @@ mark{
   font-weight:700;
 }
 
-/* ============================= */
-/* RESULTS                       */
-/* ============================= */
+/* RESULTS */
 
 .rs-grid{
   padding:30px 40px 60px;
@@ -232,13 +223,9 @@ mark{
   transition:.2s;
 }
 
-.card:hover{
-  transform:translateY(-3px);
-}
+.card:hover{ transform:translateY(-3px); }
 
-.card.active{
-  border-color:#2563eb;
-}
+.card.active{ border-color:#2563eb; }
 
 .thumb{
   width:100%;
@@ -246,9 +233,7 @@ mark{
   object-fit:cover;
 }
 
-.meta{
-  padding:12px;
-}
+.meta{ padding:12px; }
 
 .load-more{
   display:block;
@@ -274,12 +259,10 @@ mark{
 
 <div class="rs-top" id="rsTop">
 
-  <div class="rs-header-row">
-    <div class="rs-left">
-      <div class="rs-title">Real Speech</div>
-      <div class="rs-sub">
-        Search subtitles and play YouTube 4 seconds before the match.
-      </div>
+  <div>
+    <div class="rs-title">Real Speech</div>
+    <div class="rs-sub">
+      Search subtitles and play YouTube 4 seconds before the match.
     </div>
   </div>
 
