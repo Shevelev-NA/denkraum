@@ -3,12 +3,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   const API = "http://localhost:3001/api/search";
 
-  // больше первичная выдача
   const PAGE_SIZE = 20;
-
-  // автодозагрузка до минимума (если backend реально отдаёт больше)
   const MIN_FIRST_BATCH = 10;
-
   const START_OFFSET = 4;
 
   let results = [];
@@ -17,7 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let offset = 0;
   let ytPlayer = null;
 
-  // anti-race for translation
   let translateRequestId = 0;
 
   const input = document.getElementById("searchInput");
@@ -42,10 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const HISTORY_KEY = "realSpeechHistory";
   const HISTORY_MAX = 15;
 
-  // =========================
-  // Fixed header offset
-  // =========================
-
   function syncHeaderOffset() {
     if (!headerEl || !mainWrapper) return;
     const h = Math.ceil(headerEl.getBoundingClientRect().height);
@@ -53,12 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.addEventListener("resize", syncHeaderOffset);
-  // начальный расчёт
   syncHeaderOffset();
-
-  // =========================
-  // Utils
-  // =========================
 
   function escapeHtml(s) {
     return String(s ?? "")
@@ -77,7 +63,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function pickText(item) {
-    // чтобы не было “одно слово” из-за несовпадения поля
     return (
       item?.text ??
       item?.subtitle ??
@@ -91,29 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const raw = String(text ?? "");
     if (!raw) return "";
     if (!word) return raw;
-
-    // если строка короткая — возвращаем полностью
-    if (raw.length <= 220) return raw;
-
-    const lower = raw.toLowerCase();
-    const w = String(word).toLowerCase();
-    const idx = lower.indexOf(w);
-
-    // если слова нет — тоже просто возвращаем начало, без “одного слова”
-    if (idx < 0) return raw.slice(0, 220) + " …";
-
-    const PAD = 140;
-    const start = Math.max(0, idx - PAD);
-    const end = Math.min(raw.length, idx + w.length + PAD);
-
-    let left = raw.slice(start, idx);
-    const mid = raw.slice(idx, idx + w.length);
-    let right = raw.slice(idx + w.length, end);
-
-    if (start > 0) left = "… " + left;
-    if (end < raw.length) right = right + " …";
-
-    return left + mid + right;
+    return raw;
   }
 
   function updateProgress() {
@@ -134,10 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
     translationText.textContent = "";
   }
 
-  // =========================
-  // Player
-  // =========================
-
   function ensurePlayer(videoId, startSeconds) {
     if (!window.YT || !YT.Player) {
       setTimeout(() => ensurePlayer(videoId, startSeconds), 200);
@@ -153,27 +112,12 @@ document.addEventListener("DOMContentLoaded", () => {
           controls: 1,
           rel: 0,
           modestbranding: 1
-        },
-        events: {
-          onReady: (e) => {
-            try {
-              e.target.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-            } catch {}
-            try { e.target.playVideo(); } catch {}
-          }
         }
       });
       return;
     }
 
     ytPlayer.loadVideoById({ videoId, startSeconds: Math.floor(startSeconds) });
-
-    setTimeout(() => {
-      try {
-        ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-      } catch {}
-      try { ytPlayer.playVideo(); } catch {}
-    }, 120);
   }
 
   function openIndex(i) {
@@ -181,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     currentIndex = i;
     const item = results[i];
-
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     playerWrap.style.display = "block";
@@ -190,35 +133,14 @@ document.addEventListener("DOMContentLoaded", () => {
     ensurePlayer(item.videoId, start);
 
     const rawText = pickText(item);
-    const ctx = buildContext(rawText, currentQuery);
-    currentSnippetEl.innerHTML = highlightHtml(ctx, currentQuery);
+    currentSnippetEl.innerHTML = highlightHtml(rawText, currentQuery);
 
     updateProgress();
     updateActive();
-
-    // после показа плеера мог измениться header height
-    syncHeaderOffset();
   }
 
   prevBtn.onclick = () => openIndex(currentIndex - 1);
   nextBtn.onclick = () => openIndex(currentIndex + 1);
-
-  repeatBtn.onclick = () => {
-    if (currentIndex < 0 || !ytPlayer) return;
-
-    const item = results[currentIndex];
-    const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
-
-    let n = 0;
-    const doOnce = () => {
-      if (!ytPlayer) return;
-      try { ytPlayer.seekTo(start, true); ytPlayer.playVideo(); } catch {}
-      n++;
-      if (n < 3) setTimeout(doOnce, 1500);
-    };
-
-    doOnce();
-  };
 
   speedSelect.onchange = () => {
     if (!ytPlayer) return;
@@ -226,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =========================
-  // Translation (anti-race)
+  // FIXED TRANSLATION (NEW ENGINE)
   // =========================
 
   translateBtn.onclick = async () => {
@@ -236,35 +158,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const item = results[currentIndex];
     const target = langSelect.value || "ru";
-
     const rawText = pickText(item);
-    const textForTranslate = buildContext(rawText, currentQuery);
+
+    if (!rawText.trim()) return;
 
     translationBox.style.display = "block";
-    translationText.textContent = "…";
+    translationText.textContent = "Translating...";
 
     try {
-      const res = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textForTranslate)}&langpair=de|${encodeURIComponent(target)}`
-      );
+      const res = await fetch("https://libretranslate.de/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: rawText,
+          source: "de",
+          target: target,
+          format: "text"
+        })
+      });
 
       if (requestId !== translateRequestId) return;
 
       const data = await res.json();
-      const out = data?.responseData?.translatedText || "(translation unavailable)";
-      translationText.textContent = out;
-    } catch {
-      if (requestId === translateRequestId) {
-        translationText.textContent = "translation error";
+
+      if (data?.translatedText) {
+        translationText.textContent = data.translatedText;
+      } else {
+        translationText.textContent = "Translation unavailable";
       }
+
+    } catch (e) {
+      translationText.textContent = "Translation error";
     }
-
-    syncHeaderOffset();
   };
-
-  // =========================
-  // Search
-  // =========================
 
   async function loadMore() {
     if (!currentQuery) return 0;
@@ -286,11 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.index = String(absoluteIndex);
 
       const rawText = pickText(item);
-      const ctx = buildContext(rawText, currentQuery);
 
       card.innerHTML = `
         <img class="thumb" loading="lazy" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-        <div class="meta">${highlightHtml(ctx, currentQuery)}</div>
+        <div class="meta">${highlightHtml(rawText, currentQuery)}</div>
       `;
 
       card.onclick = () => openIndex(Number(card.dataset.index));
@@ -302,9 +227,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateProgress();
     updateActive();
-
-    // если новых результатов нет — больше грузить некуда
-    loadMoreBtn.style.display = newResults.length === 0 ? "none" : "block";
 
     return newResults.length;
   }
@@ -324,120 +246,13 @@ document.addEventListener("DOMContentLoaded", () => {
     updateProgress();
     updateActive();
 
-    // stop old video
-    try { ytPlayer?.stopVideo?.(); } catch {}
-
-    addHistory(query);
-
-    // первичная загрузка
-    let got = await loadMore();
-
-    // автодозагрузка до MIN_FIRST_BATCH (если backend отдаёт больше)
-    while (results.length < MIN_FIRST_BATCH && got > 0) {
-      got = await loadMore();
-    }
+    await loadMore();
 
     if (results.length > 0) openIndex(0);
-
-    syncHeaderOffset();
   }
-
-  loadMoreBtn.onclick = () => loadMore();
 
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") search(input.value);
   });
 
-  // =========================
-  // History (safe for blocked storage)
-  // =========================
-
-  function getHistory() {
-    try {
-      return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    } catch {
-      return [];
-    }
-  }
-
-  function setHistory(arr) {
-    try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
-    } catch {
-      // storage blocked -> just ignore, UI will work without persistence
-    }
-  }
-
-  function addHistory(q) {
-    let arr = getHistory();
-    arr = arr.filter((x) => x !== q);
-    arr.unshift(q);
-    arr = arr.slice(0, HISTORY_MAX);
-    setHistory(arr);
-    renderHistory();
-  }
-
-  function renderHistory() {
-    const arr = getHistory();
-    recentEl.innerHTML = '<div id="clearHistory" class="clear-btn">clear</div>';
-
-    const clearBtn = document.getElementById("clearHistory");
-    if (clearBtn) {
-      clearBtn.onclick = () => {
-        setHistory([]);
-        renderHistory();
-        syncHeaderOffset();
-      };
-    }
-
-    arr.forEach((w) => {
-      const chip = document.createElement("div");
-      chip.className = "chip";
-      chip.textContent = w;
-      chip.onclick = () => {
-        input.value = w;
-        search(w);
-      };
-      recentEl.appendChild(chip);
-    });
-
-    syncHeaderOffset();
-  }
-
-  // =========================
-  // Shrink (stable)
-  // =========================
-
-  let ticking = false;
-  let compact = false;
-
-  function onScroll() {
-    if (!rsTop) return;
-    if (ticking) return;
-    ticking = true;
-
-    requestAnimationFrame(() => {
-      const y = window.scrollY || 0;
-
-      // hysteresis to avoid flicker
-      if (!compact && y > 160) {
-        compact = true;
-        rsTop.classList.add("compact");
-        syncHeaderOffset();
-      } else if (compact && y < 60) {
-        compact = false;
-        rsTop.classList.remove("compact");
-        syncHeaderOffset();
-      }
-
-      ticking = false;
-    });
-  }
-
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  // init
-  renderHistory();
-  syncHeaderOffset();
-  onScroll();
 });
