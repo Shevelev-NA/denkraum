@@ -10,6 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let offset = 0;
   let ytPlayer = null;
 
+  // anti-race for translation
+  let translateRequestId = 0;
+
   const input = document.getElementById("searchInput");
   const resultsEl = document.getElementById("results");
   const playerWrap = document.getElementById("playerWrap");
@@ -25,6 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const recentEl = document.getElementById("recent");
   const currentSnippetEl = document.getElementById("currentSnippet");
+
+  // scroll/dock
+  const rsTop = document.getElementById("rsTop");
 
   const HISTORY_KEY = "realSpeechHistory";
   const HISTORY_MAX = 10;
@@ -45,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return safe.replace(new RegExp(`(${escaped})`, "gi"), "<mark>$1</mark>");
   }
 
-  // Даем больше контекста ВНУТРИ строки (это максимум без правок backend)
+  // контекст вокруг совпадения
   function buildContext(text, word) {
     const raw = String(text ?? "");
     if (!word) return raw;
@@ -71,8 +77,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateActive() {
-    const cards = resultsEl.querySelectorAll(".card");
-    cards.forEach((c, i) => c.classList.toggle("active", i === currentIndex));
+    resultsEl.querySelectorAll(".card").forEach((card) => {
+      card.classList.toggle(
+        "active",
+        Number(card.dataset.index) === currentIndex
+      );
+    });
+  }
+
+  function clearTranslation() {
+    translateRequestId++; // отменяет все прошлые запросы
+    translationBox.style.display = "none";
+    translationText.textContent = "";
   }
 
   function ensurePlayer(videoId, startSeconds) {
@@ -96,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
               e.target.setPlaybackRate(parseFloat(speedSelect.value || "1"));
             } catch {}
-            e.target.playVideo();
+            try { e.target.playVideo(); } catch {}
           }
         }
       });
@@ -115,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         ytPlayer.playVideo();
       } catch {}
-    }, 200);
+    }, 150);
   }
 
   function openIndex(i) {
@@ -126,8 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     playerWrap.style.display = "block";
-    translationBox.style.display = "none";
-    translationText.textContent = "";
+    clearTranslation();
 
     ensurePlayer(item.videoId, start);
 
@@ -145,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentIndex < 0 || !ytPlayer) return;
     const item = results[currentIndex];
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
-    // 3 повтора: просто 3 раза стартанём заново с короткой задержкой
+
     let n = 0;
     const doOnce = () => {
       if (!ytPlayer) return;
@@ -168,9 +183,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   translateBtn.onclick = async () => {
     if (currentIndex < 0) return;
+
+    const requestId = ++translateRequestId;
+
     const item = results[currentIndex];
     const target = langSelect.value || "ru";
-
     const textForTranslate = buildContext(item.text, currentQuery);
 
     translationBox.style.display = "block";
@@ -180,11 +197,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(
         `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textForTranslate)}&langpair=de|${encodeURIComponent(target)}`
       );
+
+      if (requestId !== translateRequestId) return;
+
       const data = await res.json();
       const out = data?.responseData?.translatedText || "(translation unavailable)";
       translationText.textContent = out;
-    } catch (e) {
-      translationText.textContent = "translation error";
+    } catch {
+      if (requestId === translateRequestId) {
+        translationText.textContent = "translation error";
+      }
     }
   };
 
@@ -202,12 +224,17 @@ document.addEventListener("DOMContentLoaded", () => {
     newResults.forEach((item, idx) => {
       const card = document.createElement("div");
       card.className = "card";
+
+      const absoluteIndex = baseIndex + idx;
+      card.dataset.index = String(absoluteIndex);
+
       const ctx = buildContext(item.text, currentQuery);
       card.innerHTML = `
         <img class="thumb" loading="lazy" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="meta">${highlightHtml(ctx, currentQuery)}</div>
       `;
-      card.onclick = () => openIndex(baseIndex + idx);
+
+      card.onclick = () => openIndex(Number(card.dataset.index));
       resultsEl.appendChild(card);
     });
 
@@ -215,6 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
     offset += newResults.length;
 
     updateProgress();
+    updateActive();
   }
 
   async function search(q) {
@@ -228,9 +256,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     resultsEl.innerHTML = "";
     playerWrap.style.display = "none";
-    translationBox.style.display = "none";
-    translationText.textContent = "";
+    clearTranslation();
     updateProgress();
+    updateActive();
+
+    // останавливаем старое видео (если есть)
+    try { ytPlayer?.stopVideo?.(); } catch {}
 
     addHistory(query);
 
@@ -289,5 +320,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ---------- Dock on scroll ----------
+  function updateDock() {
+    // докаем, когда верхний блок уже ушёл вверх (пользователь листает результаты)
+    const rect = rsTop.getBoundingClientRect();
+    const shouldDock = rect.bottom < 80; // порог
+
+    rsTop.classList.toggle("docked", shouldDock);
+    document.body.classList.toggle("has-dock-padding", shouldDock);
+  }
+
+  window.addEventListener("scroll", updateDock, { passive: true });
+  window.addEventListener("resize", updateDock);
+
+  // init
   renderHistory();
+  updateDock();
 });
