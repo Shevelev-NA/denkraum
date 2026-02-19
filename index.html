@@ -1,315 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Denkraum — Real Speech</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Denkraum — tools for text, speech and media</title>
 
-<link rel="stylesheet" href="./style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<style>
-  body{
-    margin:0;
-    font-family:Inter, sans-serif;
-    background:#f3f4f6;
-  }
-
-  /* ===== Fixed whole header (logo + nav + Real Speech block) ===== */
-  .header{
-    position:fixed;
-    top:0;
-    left:0;
-    right:0;
-    z-index:4000;
-    background:#ffffff;
-    border-bottom:1px solid #e5e7eb;
-  }
-
-  /* main content starts below fixed header; value is set by JS */
-  .main-wrapper{
-    padding-top: 200px; /* fallback, JS overwrites */
-  }
-
-  /* ===== Real Speech block inside header ===== */
-  #rsTop{
-    padding:18px 40px 18px;
-    border-top:1px solid #e5e7eb;
-    background:#ffffff;
-    transition: padding .18s ease, box-shadow .18s ease;
-  }
-
-  /* Shrink ONLY paddings + subtitle/title size (НЕ меняем высоту плеера) */
-  #rsTop.compact{
-    padding:10px 40px 10px;
-    box-shadow:0 10px 28px rgba(0,0,0,0.10);
-  }
-  #rsTop.compact .rs-sub{ display:none; }
-  #rsTop.compact .rs-title{ font-size:20px; }
-
-  .rs-title{
-    font-size:26px;
-    font-weight:700;
-    margin:0 0 4px 0;
-    line-height:1.1;
-    transition: font-size .18s ease;
-  }
-
-  .rs-sub{
-    font-size:13px;
-    color:#64748b;
-  }
-
-  .rs-search-row{
-    display:flex;
-    gap:12px;
-    margin-top:14px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-
-  #searchInput{
-    width:360px;
-    max-width:70vw;
-    padding:12px 16px;
-    font-size:16px;
-    border-radius:14px;
-    border:1px solid #d1d5db;
-    background:#ffffff;
-    outline:none;
-  }
-
-  #searchInput:focus{
-    border-color:#2563eb;
-    box-shadow:0 0 0 3px rgba(37,99,235,0.15);
-  }
-
-  #recent{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-
-  .chip{
-    padding:6px 12px;
-    background:#e5e7eb;
-    border-radius:999px;
-    font-size:13px;
-    cursor:pointer;
-    user-select:none;
-  }
-
-  .clear-btn{
-    font-size:12px;
-    color:#ef4444;
-    cursor:pointer;
-    user-select:none;
-  }
-
-  /* ===== Player ===== */
-  #playerWrap{
-    margin-top:16px;
-    display:none;
-  }
-
-  #player{
-    width:100%;
-    height:300px; /* фиксировано, чтобы YouTube не дергался */
-    border-radius:16px;
-    overflow:hidden;
-    background:#000;
-  }
-
-  .player-controls{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-
-  .nav-btn{
-    background:#111827;
-    color:#fff;
-    border:none;
-    padding:10px 16px;
-    border-radius:12px;
-    cursor:pointer;
-    font-size:18px;
-  }
-
-  .progress{
-    padding:6px 10px;
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:999px;
-    font-weight:600;
-  }
-
-  .btn{
-    border:1px solid #d1d5db;
-    background:#ffffff;
-    padding:10px 14px;
-    border-radius:12px;
-    cursor:pointer;
-    font-weight:600;
-  }
-
-  .btn.primary{
-    background:#2563eb;
-    color:#fff;
-    border:none;
-  }
-
-  .select{
-    border:1px solid #d1d5db;
-    background:#ffffff;
-    padding:10px 12px;
-    border-radius:12px;
-    cursor:pointer;
-    font-weight:600;
-  }
-
-  /* Translate must never be transparent */
-  #translateBtn{
-    background:#ffffff !important;
-    color:#111827 !important;
-    border:1px solid #d1d5db !important;
-    opacity:1 !important;
-  }
-
-  .current-snippet{
-    margin-top:14px;
-    padding:14px;
-    background:#ffffff;
-    border-radius:14px;
-    font-size:16px;
-    line-height:1.6;
-  }
-
-  .translation{
-    margin-top:10px;
-    padding:10px 14px;
-    background:#0b1220;
-    color:#e5e7eb;
-    border-radius:12px;
-    display:none;
-    max-width:700px;
-    font-size:15px;
-  }
-
-  mark{
-    background:#fde047;
-    padding:2px 4px;
-    border-radius:4px;
-    font-weight:700;
-  }
-
-  /* ===== Results grid ===== */
-  .rs-grid{
-    padding:30px 40px 60px;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-    gap:24px;
-  }
-
-  .card{
-    background:#fff;
-    border-radius:18px;
-    overflow:hidden;
-    cursor:pointer;
-    box-shadow:0 8px 24px rgba(0,0,0,0.08);
-    border:2px solid transparent;
-    transition:.15s ease;
-  }
-  .card:hover{ transform: translateY(-2px); }
-  .card.active{ border-color:#2563eb; }
-
-  .thumb{
-    width:100%;
-    aspect-ratio:16/9;
-    object-fit:cover;
-    display:block;
-  }
-
-  .meta{ padding:12px; }
-
-  .load-more{
-    display:block;
-    margin:30px auto 60px;
-    padding:12px 24px;
-    border:none;
-    border-radius:12px;
-    background:#2563eb;
-    color:#fff;
-    cursor:pointer;
-  }
-</style>
+  <link rel="stylesheet" href="./style.css" />
 </head>
-
 <body>
+<div class="page">
 
-<!-- Header as in index.html: Tools / About -->
 <header class="header">
   <div class="header-inner">
     <a class="logo" href="./index.html">Denkraum</a>
     <nav class="nav">
-      <a href="./index.html">Tools</a>
+      <a href="./index.html" aria-current="page">Tools</a>
       <a href="./about.html">About</a>
     </nav>
   </div>
-
-  <div id="rsTop">
-    <div class="rs-title">Real Speech</div>
-    <div class="rs-sub">Search subtitles and play YouTube 4 seconds before the match.</div>
-
-    <div class="rs-search-row">
-      <input id="searchInput" placeholder="Type a word and press Enter…" />
-      <div id="recent">
-        <div id="clearHistory" class="clear-btn">clear</div>
-      </div>
-    </div>
-
-    <div id="playerWrap">
-      <div id="player"></div>
-
-      <div class="player-controls">
-        <button class="nav-btn" id="prevBtn">◀</button>
-        <div class="progress" id="progressText">0 of 0</div>
-        <button class="nav-btn" id="nextBtn">▶</button>
-
-        <button class="btn primary" id="repeatBtn">Repeat 3×</button>
-
-        <select id="speedSelect" class="select">
-          <option value="0.75">0.75x</option>
-          <option value="1" selected>1x</option>
-          <option value="1.25">1.25x</option>
-        </select>
-
-        <select id="langSelect" class="select">
-          <option value="ru">RU</option>
-          <option value="en">EN</option>
-        </select>
-
-        <button class="btn" id="translateBtn" type="button">Translate</button>
-      </div>
-
-      <div class="current-snippet" id="currentSnippet"></div>
-
-      <div class="translation" id="translationBox">
-        <div id="translationText"></div>
-      </div>
-    </div>
-  </div>
 </header>
 
-<main class="main-wrapper">
-  <div id="results" class="rs-grid"></div>
-  <button id="loadMoreBtn" class="load-more">Show more</button>
+<main class="main">
+  <section class="hero">
+    <h1>Understand language</h1>
+    <p>Through text, speech and media.</p>
+  </section>
+
+  <section class="modules">
+
+    <!-- Text -->
+    <article class="card">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <line x1="10" y1="9" x2="8" y2="9"/>
+        </svg>
+      </div>
+      <h3>Text</h3>
+      <p>Post-line translation and language understanding.</p>
+      <a class="btn" href="./text.html">Open</a>
+    </article>
+
+    <!-- Transcription -->
+    <article class="card is-soon">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </div>
+      <h3>Transcription</h3>
+      <p>Audio to text with timestamps.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+
+    <!-- Real Speech (Subtitle Search) -->
+    <article class="card">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polygon points="10 8 16 12 10 16 10 8"/>
+        </svg>
+      </div>
+      <h3>Real Speech</h3>
+      <p>Hear words in real video context.</p>
+      <a class="btn" href="./pronunciation.html">Open</a>
+    </article>
+
+    <!-- Image -->
+    <article class="card is-soon">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+      <h3>Image</h3>
+      <p>Describe images and situations.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+
+    <!-- Insight -->
+    <article class="card is-soon">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18h6"/>
+          <path d="M10 22h4"/>
+          <path d="M12 2a7 7 0 0 0-4 12.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26A7 7 0 0 0 12 2z"/>
+        </svg>
+      </div>
+      <h3>Insight</h3>
+      <p>Get a concise overview of the content.</p>
+      <span class="soon">Coming soon</span>
+    </article>
+
+  </section>
 </main>
 
-<script src="https://www.youtube.com/iframe_api"></script>
-<script src="./pronunciation.js"></script>
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="./impressum.html">Impressum</a>
+      <a href="./privacy.html">Datenschutzerklärung</a>
+    </div>
+    <div>© 2026 Denkraum</div>
+  </div>
+</footer>
 
+</div>
 </body>
 </html>
