@@ -1,4 +1,5 @@
 // pronunciation.js
+
 document.addEventListener("DOMContentLoaded", () => {
   const API = "http://localhost:3001/api/search";
   const PAGE_SIZE = 10;
@@ -28,12 +29,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const recentEl = document.getElementById("recent");
   const currentSnippetEl = document.getElementById("currentSnippet");
-
-  // scroll/dock
   const rsTop = document.getElementById("rsTop");
 
   const HISTORY_KEY = "realSpeechHistory";
   const HISTORY_MAX = 10;
+
+  // =========================
+  // Utils
+  // =========================
 
   function escapeHtml(s) {
     return String(s)
@@ -51,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return safe.replace(new RegExp(`(${escaped})`, "gi"), "<mark>$1</mark>");
   }
 
-  // контекст вокруг совпадения
   function buildContext(text, word) {
     const raw = String(text ?? "");
     if (!word) return raw;
@@ -59,14 +61,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const w = String(word).toLowerCase();
     const idx = lower.indexOf(w);
     if (idx < 0) return raw;
+
     const PAD = 70;
     const start = Math.max(0, idx - PAD);
     const end = Math.min(raw.length, idx + w.length + PAD);
+
     let left = raw.slice(start, idx);
     const mid = raw.slice(idx, idx + w.length);
     let right = raw.slice(idx + w.length, end);
+
     if (start > 0) left = "… " + left;
     if (end < raw.length) right = right + " …";
+
     return left + mid + right;
   }
 
@@ -86,10 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function clearTranslation() {
-    translateRequestId++; // отменяет все прошлые запросы
+    translateRequestId++;
     translationBox.style.display = "none";
     translationText.textContent = "";
   }
+
+  // =========================
+  // Player
+  // =========================
 
   function ensurePlayer(videoId, startSeconds) {
     if (!window.YT || !YT.Player) {
@@ -112,7 +122,9 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
               e.target.setPlaybackRate(parseFloat(speedSelect.value || "1"));
             } catch {}
-            try { e.target.playVideo(); } catch {}
+            try {
+              e.target.playVideo();
+            } catch {}
           }
         }
       });
@@ -158,19 +170,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   repeatBtn.onclick = () => {
     if (currentIndex < 0 || !ytPlayer) return;
+
     const item = results[currentIndex];
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     let n = 0;
+
     const doOnce = () => {
       if (!ytPlayer) return;
+
       try {
         ytPlayer.seekTo(start, true);
         ytPlayer.playVideo();
       } catch {}
+
       n++;
       if (n < 3) setTimeout(doOnce, 1500);
     };
+
     doOnce();
   };
 
@@ -180,6 +197,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
     } catch {}
   };
+
+  // =========================
+  // Translation
+  // =========================
 
   translateBtn.onclick = async () => {
     if (currentIndex < 0) return;
@@ -201,7 +222,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (requestId !== translateRequestId) return;
 
       const data = await res.json();
-      const out = data?.responseData?.translatedText || "(translation unavailable)";
+      const out =
+        data?.responseData?.translatedText || "(translation unavailable)";
       translationText.textContent = out;
     } catch {
       if (requestId === translateRequestId) {
@@ -210,12 +232,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // =========================
+  // Search
+  // =========================
+
   async function loadMore() {
     if (!currentQuery) return;
 
     const res = await fetch(
-      `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${offset}`
+      `${API}?query=${encodeURIComponent(
+        currentQuery
+      )}&count=${PAGE_SIZE}&offset=${offset}`
     );
+
     const data = await res.json();
     const newResults = data.results || [];
 
@@ -229,6 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.index = String(absoluteIndex);
 
       const ctx = buildContext(item.text, currentQuery);
+
       card.innerHTML = `
         <img class="thumb" loading="lazy" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="meta">${highlightHtml(ctx, currentQuery)}</div>
@@ -260,8 +290,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateProgress();
     updateActive();
 
-    // останавливаем старое видео (если есть)
-    try { ytPlayer?.stopVideo?.(); } catch {}
+    try {
+      ytPlayer?.stopVideo?.();
+    } catch {}
 
     addHistory(query);
 
@@ -276,7 +307,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") search(input.value);
   });
 
-  // ---------- History ----------
+  // =========================
+  // History
+  // =========================
+
   function getHistory() {
     try {
       return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
@@ -300,7 +334,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderHistory() {
     const arr = getHistory();
-    recentEl.innerHTML = '<div id="clearHistory" class="clear-btn">clear</div>';
+    recentEl.innerHTML =
+      '<div id="clearHistory" class="clear-btn">clear</div>';
 
     const clearBtn = document.getElementById("clearHistory");
     clearBtn.onclick = () => {
@@ -320,29 +355,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Dock on scroll ----------
-  function updateDock() {
-    // докаем, когда верхний блок уже ушёл вверх (пользователь листает результаты)
-    const rect = rsTop.getBoundingClientRect();
-    const shouldDock = rect.bottom < 80; // порог
+  // =========================
+  // SHRINK HEADER
+  // =========================
 
-    rsTop.classList.toggle("docked", shouldDock);
-    document.body.classList.toggle("has-dock-padding", shouldDock);
-  }
-
-  window.addEventListener("scroll", updateDock, { passive: true });
-  window.addEventListener("resize", updateDock);
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 60) {
+      rsTop.classList.add("compact");
+    } else {
+      rsTop.classList.remove("compact");
+    }
+  });
 
   // init
   renderHistory();
-  updateDock();
 });
-// SHRINK ON SCROLL
-window.addEventListener("scroll", () => {
-  if (window.scrollY > 60) {
-    rsTop.classList.add("compact");
-  } else {
-    rsTop.classList.remove("compact");
-  }
-});
-
