@@ -2,7 +2,13 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const API = "http://localhost:3001/api/search";
-  const PAGE_SIZE = 10;
+
+  // больше первичная выдача
+  const PAGE_SIZE = 20;
+
+  // автодозагрузка до минимума (если backend реально отдаёт больше)
+  const MIN_FIRST_BATCH = 10;
+
   const START_OFFSET = 4;
 
   let results = [];
@@ -30,29 +36,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const recentEl = document.getElementById("recent");
   const currentSnippetEl = document.getElementById("currentSnippet");
   const rsTop = document.getElementById("rsTop");
+  const headerEl = document.querySelector(".header");
+  const mainWrapper = document.querySelector(".main-wrapper");
 
   const HISTORY_KEY = "realSpeechHistory";
-  const HISTORY_MAX = 10;
+  const HISTORY_MAX = 15;
 
-  // ===== fixed header: padding-top = header height
-  function syncTopPadding() {
-    if (!rsTop) return;
-    const h = Math.ceil(rsTop.getBoundingClientRect().height);
-    document.body.style.paddingTop = `${h}px`;
+  // =========================
+  // Fixed header offset
+  // =========================
+
+  function syncHeaderOffset() {
+    if (!headerEl || !mainWrapper) return;
+    const h = Math.ceil(headerEl.getBoundingClientRect().height);
+    mainWrapper.style.paddingTop = `${h}px`;
   }
 
-  // ResizeObserver: обновляет padding при любых изменениях в шапке (плеер, перевод, история)
-  if (rsTop) {
-  const ro = new ResizeObserver(() => syncTopPadding());
-  ro.observe(rsTop);
-  }
+  window.addEventListener("resize", syncHeaderOffset);
+  // начальный расчёт
+  syncHeaderOffset();
 
   // =========================
   // Utils
   // =========================
 
   function escapeHtml(s) {
-    return String(s)
+    return String(s ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
@@ -61,21 +70,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function highlightHtml(text, word) {
-    const safe = escapeHtml(text ?? "");
+    const safe = escapeHtml(text);
     if (!word) return safe;
     const escaped = String(word).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return safe.replace(new RegExp(`(${escaped})`, "gi"), "<mark>$1</mark>");
   }
 
+  function pickText(item) {
+    // чтобы не было “одно слово” из-за несовпадения поля
+    return (
+      item?.text ??
+      item?.subtitle ??
+      item?.caption ??
+      item?.content ??
+      ""
+    );
+  }
+
   function buildContext(text, word) {
     const raw = String(text ?? "");
+    if (!raw) return "";
     if (!word) return raw;
+
+    // если строка короткая — возвращаем полностью
+    if (raw.length <= 220) return raw;
+
     const lower = raw.toLowerCase();
     const w = String(word).toLowerCase();
     const idx = lower.indexOf(w);
-    if (idx < 0) return raw;
 
-    const PAD = 70;
+    // если слова нет — тоже просто возвращаем начало, без “одного слова”
+    if (idx < 0) return raw.slice(0, 220) + " …";
+
+    const PAD = 140;
     const start = Math.max(0, idx - PAD);
     const end = Math.min(raw.length, idx + w.length + PAD);
 
@@ -97,15 +124,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateActive() {
     resultsEl.querySelectorAll(".card").forEach((card) => {
-      card.classList.toggle(
-        "active",
-        Number(card.dataset.index) === currentIndex
-      );
+      card.classList.toggle("active", Number(card.dataset.index) === currentIndex);
     });
   }
 
   function clearTranslation() {
-    translateRequestId++; // отменяет все прошлые запросы
+    translateRequestId++;
     translationBox.style.display = "none";
     translationText.textContent = "";
   }
@@ -116,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function ensurePlayer(videoId, startSeconds) {
     if (!window.YT || !YT.Player) {
-      setTimeout(() => ensurePlayer(videoId, startSeconds), 250);
+      setTimeout(() => ensurePlayer(videoId, startSeconds), 200);
       return;
     }
 
@@ -142,19 +166,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    ytPlayer.loadVideoById({
-      videoId,
-      startSeconds: Math.floor(startSeconds)
-    });
+    ytPlayer.loadVideoById({ videoId, startSeconds: Math.floor(startSeconds) });
 
     setTimeout(() => {
       try {
         ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
       } catch {}
-      try {
-        ytPlayer.playVideo();
-      } catch {}
-    }, 150);
+      try { ytPlayer.playVideo(); } catch {}
+    }, 120);
   }
 
   function openIndex(i) {
@@ -162,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     currentIndex = i;
     const item = results[i];
+
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     playerWrap.style.display = "block";
@@ -169,12 +189,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ensurePlayer(item.videoId, start);
 
-    const contextText = buildContext(item.text, currentQuery);
-    currentSnippetEl.innerHTML = highlightHtml(contextText, currentQuery);
+    const rawText = pickText(item);
+    const ctx = buildContext(rawText, currentQuery);
+    currentSnippetEl.innerHTML = highlightHtml(ctx, currentQuery);
 
     updateProgress();
     updateActive();
-    syncTopPadding();
+
+    // после показа плеера мог измениться header height
+    syncHeaderOffset();
   }
 
   prevBtn.onclick = () => openIndex(currentIndex - 1);
@@ -182,31 +205,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   repeatBtn.onclick = () => {
     if (currentIndex < 0 || !ytPlayer) return;
+
     const item = results[currentIndex];
     const start = Math.max(0, Number(item.start || 0) - START_OFFSET);
 
     let n = 0;
     const doOnce = () => {
       if (!ytPlayer) return;
-      try {
-        ytPlayer.seekTo(start, true);
-        ytPlayer.playVideo();
-      } catch {}
+      try { ytPlayer.seekTo(start, true); ytPlayer.playVideo(); } catch {}
       n++;
       if (n < 3) setTimeout(doOnce, 1500);
     };
+
     doOnce();
   };
 
   speedSelect.onchange = () => {
     if (!ytPlayer) return;
-    try {
-      ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1"));
-    } catch {}
+    try { ytPlayer.setPlaybackRate(parseFloat(speedSelect.value || "1")); } catch {}
   };
 
   // =========================
-  // Translation
+  // Translation (anti-race)
   // =========================
 
   translateBtn.onclick = async () => {
@@ -216,7 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const item = results[currentIndex];
     const target = langSelect.value || "ru";
-    const textForTranslate = buildContext(item.text, currentQuery);
+
+    const rawText = pickText(item);
+    const textForTranslate = buildContext(rawText, currentQuery);
 
     translationBox.style.display = "block";
     translationText.textContent = "…";
@@ -237,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    syncTopPadding();
+    syncHeaderOffset();
   };
 
   // =========================
@@ -245,11 +267,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
 
   async function loadMore() {
-    if (!currentQuery) return;
+    if (!currentQuery) return 0;
 
     const res = await fetch(
       `${API}?query=${encodeURIComponent(currentQuery)}&count=${PAGE_SIZE}&offset=${offset}`
     );
+
     const data = await res.json();
     const newResults = data.results || [];
 
@@ -262,7 +285,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const absoluteIndex = baseIndex + idx;
       card.dataset.index = String(absoluteIndex);
 
-      const ctx = buildContext(item.text, currentQuery);
+      const rawText = pickText(item);
+      const ctx = buildContext(rawText, currentQuery);
+
       card.innerHTML = `
         <img class="thumb" loading="lazy" src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
         <div class="meta">${highlightHtml(ctx, currentQuery)}</div>
@@ -277,6 +302,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateProgress();
     updateActive();
+
+    // если новых результатов нет — больше грузить некуда
+    loadMoreBtn.style.display = newResults.length === 0 ? "none" : "block";
+
+    return newResults.length;
   }
 
   async function search(q) {
@@ -294,25 +324,32 @@ document.addEventListener("DOMContentLoaded", () => {
     updateProgress();
     updateActive();
 
-    // останавливаем старое видео (если есть)
+    // stop old video
     try { ytPlayer?.stopVideo?.(); } catch {}
 
     addHistory(query);
 
-    await loadMore();
+    // первичная загрузка
+    let got = await loadMore();
+
+    // автодозагрузка до MIN_FIRST_BATCH (если backend отдаёт больше)
+    while (results.length < MIN_FIRST_BATCH && got > 0) {
+      got = await loadMore();
+    }
 
     if (results.length > 0) openIndex(0);
-    syncTopPadding();
+
+    syncHeaderOffset();
   }
 
-  loadMoreBtn.onclick = loadMore;
+  loadMoreBtn.onclick = () => loadMore();
 
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") search(input.value);
   });
 
   // =========================
-  // History
+  // History (safe for blocked storage)
   // =========================
 
   function getHistory() {
@@ -324,7 +361,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setHistory(arr) {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+    } catch {
+      // storage blocked -> just ignore, UI will work without persistence
+    }
   }
 
   function addHistory(q) {
@@ -341,11 +382,13 @@ document.addEventListener("DOMContentLoaded", () => {
     recentEl.innerHTML = '<div id="clearHistory" class="clear-btn">clear</div>';
 
     const clearBtn = document.getElementById("clearHistory");
-    clearBtn.onclick = () => {
-      setHistory([]);
-      renderHistory();
-      syncTopPadding();
-    };
+    if (clearBtn) {
+      clearBtn.onclick = () => {
+        setHistory([]);
+        renderHistory();
+        syncHeaderOffset();
+      };
+    }
 
     arr.forEach((w) => {
       const chip = document.createElement("div");
@@ -358,32 +401,33 @@ document.addEventListener("DOMContentLoaded", () => {
       recentEl.appendChild(chip);
     });
 
-    syncTopPadding();
+    syncHeaderOffset();
   }
 
   // =========================
-  // SHRINK (NO PLAYER RESIZE, NO JANK)
+  // Shrink (stable)
   // =========================
 
   let ticking = false;
   let compact = false;
 
   function onScroll() {
+    if (!rsTop) return;
     if (ticking) return;
     ticking = true;
 
     requestAnimationFrame(() => {
       const y = window.scrollY || 0;
 
-      // гистерезис, чтобы не дрожало на границе
-      if (!compact && y > 140) {
+      // hysteresis to avoid flicker
+      if (!compact && y > 160) {
         compact = true;
         rsTop.classList.add("compact");
-        syncTopPadding();
+        syncHeaderOffset();
       } else if (compact && y < 60) {
         compact = false;
         rsTop.classList.remove("compact");
-        syncTopPadding();
+        syncHeaderOffset();
       }
 
       ticking = false;
@@ -391,10 +435,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", syncTopPadding);
 
   // init
   renderHistory();
-  syncTopPadding();
+  syncHeaderOffset();
   onScroll();
 });
