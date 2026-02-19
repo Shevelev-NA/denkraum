@@ -15,17 +15,25 @@ body{
 }
 
 /* ============================= */
-/* STICKY HEADER                 */
+/* FIXED HEADER                 */
 /* ============================= */
 
 .rs-top{
-  position:sticky;
+  position:fixed;          /* <-- ВАЖНО */
   top:0;
-  z-index:2000;
+  left:0;
+  right:0;
+  z-index:3000;
   background:#ffffff;
   padding:22px 40px 20px;
   border-bottom:1px solid #e5e7eb;
   transition:all .25s ease;
+}
+
+/* Компенсация высоты header */
+.rs-spacer{
+  height:420px;  /* будет динамически уменьшаться */
+  transition:height .25s ease;
 }
 
 /* shrink state */
@@ -45,13 +53,16 @@ body{
   font-size:20px;
 }
 
+.rs-top.compact + .rs-spacer{
+  height:300px;
+}
+
 /* ============================= */
 
 .rs-title{
   font-size:26px;
   font-weight:700;
   margin:0;
-  transition:.2s;
 }
 
 .rs-sub{
@@ -177,33 +188,6 @@ body{
   font-weight:600;
 }
 
-.current-snippet{
-  margin-top:14px;
-  padding:14px;
-  background:#ffffff;
-  border-radius:14px;
-  font-size:16px;
-  line-height:1.6;
-}
-
-.translation{
-  margin-top:10px;
-  padding:10px 14px;
-  background:#0b1220;
-  color:#e5e7eb;
-  border-radius:12px;
-  display:none;
-  max-width:500px;
-  font-size:15px;
-}
-
-mark{
-  background:#fde047;
-  padding:2px 4px;
-  border-radius:4px;
-  font-weight:700;
-}
-
 /* RESULTS */
 
 .rs-grid{
@@ -305,6 +289,8 @@ mark{
   </div>
 
 </div>
+
+<div class="rs-spacer"></div>
 
 <div id="results" class="rs-grid"></div>
 <button id="loadMoreBtn" class="load-more">Show more</button>
